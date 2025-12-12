@@ -1,0 +1,7 @@
+[
+  { "id": "1", "name": "Admin User", "email": "rifaraiz@2026.com", "role": "admin", "referralCode": "ADMIN123", "password": "r1f@r@1z" },
+  { "id": "2", "name": "Diana Prince", "email": "diana@example.com", "role": "user", "referralCode": "DIANA456" },
+  { "id": "3", "name": "Bruce Wayne", "email": "bruce@example.com", "role": "user", "referralCode": "BRUCE789", "referredBy": "2", "upline": ["2"] },
+  { "id": "4", "name": "Clark Kent", "email": "clark@example.com", "role": "user", "referralCode": "CLARK101", "referredBy": "3", "upline": ["3", "2"] },
+  { "id": "5", "name": "John Doe", "email": "john@example.com", "role": "inactive", "referralCode": "JOHN000", "referredBy": "2", "upline": ["2"] }
+]
