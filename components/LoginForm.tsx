@@ -8,8 +8,8 @@ interface LoginFormProps {
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ onLogin, toggleView }) => {
-    const [email, setEmail] = useState('rifaraiz@2026.com');
-    const [password, setPassword] = useState('r1f@r@1z');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [error, setError] = useState('');
 
     const handleSubmit = (e: React.FormEvent) => {
