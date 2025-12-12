@@ -1,0 +1,9 @@
+node_modules
+.vscode
+.vs
+.DS_Store
+*.log
+.env
+.git
+*.tgz
+*.zip
