@@ -1,0 +1,6 @@
+
+[
+  { "id": "c1", "userId": "2", "amount": 30, "status": "PENDING", "level": 1, "sourceUserId": "3", "raffleId": "r2", "date": "2025-07-21T11:30:00.000Z" },
+  { "id": "c2", "userId": "3", "amount": 6, "status": "PENDING", "level": 1, "sourceUserId": "4", "raffleId": "r2", "date": "2025-07-22T14:00:00.000Z" },
+  { "id": "c3", "userId": "2", "amount": 3, "status": "PAID", "level": 2, "sourceUserId": "4", "raffleId": "r2", "date": "2025-07-22T14:00:00.000Z" }
+]

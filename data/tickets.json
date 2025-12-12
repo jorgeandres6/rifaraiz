@@ -1,0 +1,20 @@
+
+[
+  { "id": "t1", "raffleId": "r1", "userId": "2", "purchaseDate": "2025-07-20T10:00:00.000Z", "ticketNumber": "DIANA456-1", "originalUserId": "2", "transferCount": 0 },
+  { "id": "t2", "raffleId": "r1", "userId": "2", "purchaseDate": "2025-07-20T10:00:00.000Z", "ticketNumber": "DIANA456-2", "originalUserId": "2", "transferCount": 0 },
+  { "id": "t3", "raffleId": "r1", "userId": "2", "purchaseDate": "2025-07-20T10:00:00.000Z", "ticketNumber": "DIANA456-3", "originalUserId": "2", "transferCount": 0 },
+  { "id": "t4", "raffleId": "r1", "userId": "2", "purchaseDate": "2025-07-20T10:00:00.000Z", "ticketNumber": "DIANA456-4", "originalUserId": "2", "transferCount": 0 },
+  { "id": "t5", "raffleId": "r1", "userId": "2", "purchaseDate": "2025-07-20T10:00:00.000Z", "ticketNumber": "DIANA456-5", "originalUserId": "2", "transferCount": 0 },
+  { "id": "t6", "raffleId": "r2", "userId": "3", "purchaseDate": "2025-07-21T11:30:00.000Z", "ticketNumber": "BRUCE789-1", "originalUserId": "3", "transferCount": 0 },
+  { "id": "t7", "raffleId": "r2", "userId": "3", "purchaseDate": "2025-07-21T11:30:00.000Z", "ticketNumber": "BRUCE789-2", "originalUserId": "3", "transferCount": 0 },
+  { "id": "t8", "raffleId": "r2", "userId": "3", "purchaseDate": "2025-07-21T11:30:00.000Z", "ticketNumber": "BRUCE789-3", "originalUserId": "3", "transferCount": 0 },
+  { "id": "t9", "raffleId": "r2", "userId": "3", "purchaseDate": "2025-07-21T11:30:00.000Z", "ticketNumber": "BRUCE789-4", "originalUserId": "3", "transferCount": 0 },
+  { "id": "t10", "raffleId": "r2", "userId": "3", "purchaseDate": "2025-07-21T11:30:00.000Z", "ticketNumber": "BRUCE789-5", "originalUserId": "3", "transferCount": 0 },
+  { "id": "t11", "raffleId": "r2", "userId": "3", "purchaseDate": "2025-07-21T11:30:00.000Z", "ticketNumber": "BRUCE789-6", "originalUserId": "3", "transferCount": 0 },
+  { "id": "t12", "raffleId": "r2", "userId": "3", "purchaseDate": "2025-07-21T11:30:00.000Z", "ticketNumber": "BRUCE789-7", "originalUserId": "3", "transferCount": 0 },
+  { "id": "t13", "raffleId": "r2", "userId": "3", "purchaseDate": "2025-07-21T11:30:00.000Z", "ticketNumber": "BRUCE789-8", "originalUserId": "3", "transferCount": 0 },
+  { "id": "t14", "raffleId": "r2", "userId": "3", "purchaseDate": "2025-07-21T11:30:00.000Z", "ticketNumber": "BRUCE789-9", "originalUserId": "3", "transferCount": 0 },
+  { "id": "t15", "raffleId": "r2", "userId": "3", "purchaseDate": "2025-07-21T11:30:00.000Z", "ticketNumber": "BRUCE789-10", "originalUserId": "3", "transferCount": 0 },
+  { "id": "t16", "raffleId": "r2", "userId": "4", "purchaseDate": "2025-07-22T14:00:00.000Z", "ticketNumber": "CLARK101-1", "originalUserId": "4", "transferCount": 0 },
+  { "id": "t17", "raffleId": "r2", "userId": "4", "purchaseDate": "2025-07-22T14:00:00.000Z", "ticketNumber": "CLARK101-2", "originalUserId": "4", "transferCount": 0 }
+]

@@ -1,0 +1,5 @@
+{
+  "name": "RifaRaiz AI-Powered Raffle Dashboard",
+  "description": "A modern web dashboard for the RifaRaiz platform, allowing users to view raffles, purchase tickets, and track referrals. Includes AI-powered tools for administrators to create compelling raffle descriptions and titles using the Gemini API.",
+  "requestFramePermissions": []
+}

@@ -1,0 +1,52 @@
+
+[
+  {
+    "id": "r1",
+    "title": "¡Gana un Viaje a Cancún!",
+    "description": "Participa para ganar un viaje todo pagado para 2 personas a las hermosas playas de Cancún. ¡Sol, arena y mar te esperan!",
+    "prizeInfo": "Viaje a Cancún para 2 personas",
+    "salesGoal": 2000,
+    "goalThresholdPercent": 80,
+    "ticketPrice": 20,
+    "soldTickets": 5,
+    "currentSales": 100,
+    "ticketPacks": [
+      { "quantity": 3, "price": 50 },
+      { "quantity": 5, "price": 80 }
+    ],
+    "extraPrizes": [
+      { "id": "ep1", "name": "Bono de $50", "quantity": 10 },
+      { "id": "ep2", "name": "Entrada de cine", "quantity": 20 }
+    ]
+  },
+  {
+    "id": "r2",
+    "title": "Rifa de PS5 + TV 4K",
+    "description": "¡El combo gamer definitivo! Llévate a casa una PlayStation 5 y una TV 4K de 55 pulgadas para disfrutar de tus juegos como nunca antes.",
+    "prizeInfo": "PlayStation 5 y TV 4K",
+    "salesGoal": 3000,
+    "goalThresholdPercent": 90,
+    "ticketPrice": 15,
+    "soldTickets": 12,
+    "currentSales": 180,
+    "ticketPacks": [
+      { "quantity": 5, "price": 70 },
+      { "quantity": 10, "price": 130 }
+    ],
+    "extraPrizes": []
+  },
+  {
+    "id": "r_monthly",
+    "title": "Rifa Mensual Exclusiva",
+    "description": "Participa automáticamente en el sorteo de este gran premio si posees al menos un boleto de cualquiera de nuestras otras rifas activas.",
+    "prizeInfo": "Iphone 15 Pro Max",
+    "salesGoal": 0,
+    "goalThresholdPercent": 100,
+    "ticketPrice": 0,
+    "soldTickets": 0,
+    "currentSales": 0,
+    "ticketPacks": [],
+    "extraPrizes": [],
+    "isMonthly": true
+  }
+]
