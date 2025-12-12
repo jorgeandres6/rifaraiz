@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import LoginForm from '../components/LoginForm';
 import SignupForm from '../components/SignupForm';
+import logoRR from '../src/img/logoRR.png';
 
 interface AuthPageProps {
     onLogin: (email: string, pass: string) => { success: boolean; message?: string };
@@ -16,7 +17,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onSignup }) => {
         <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 p-4">
             <div className="w-full max-w-md">
                 <div className="text-center mb-8">
-                    <img src="src/img/logoRR.png" alt="RifaRaiz Logo" className="mx-auto h-auto w-full max-w-xs" />
+                    <img src={logoRR} alt="RifaRaiz Logo" className="mx-auto h-auto w-full max-w-xs" />
                     <p className="text-gray-400 mt-6">
                         {isLoginView ? 'Inicia sesión para continuar' : 'Crea una cuenta para empezar'}
                     </p>

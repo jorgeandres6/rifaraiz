@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import iconoRR from '../src/img/iconoRR.png';
 import { User } from '../types';
 import { UserCircleIcon, ChevronDownIcon, BellIcon, Cog6ToothIcon } from './icons';
 
@@ -21,7 +22,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, allUsers, switchUser, onLo
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
-            <img src="src/img/iconoRR.png" alt="RifaRaiz Logo" className="h-10 w-auto" />
+            <img src={iconoRR} alt="RifaRaiz Logo" className="h-10 w-auto" />
           </div>
           <div className="flex items-center gap-4">
              {/* Notification Button */}
