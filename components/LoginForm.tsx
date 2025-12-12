@@ -22,14 +22,14 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, toggleView }) => {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
             <div>
                 <label htmlFor="email-login" className="block text-sm font-medium text-gray-300">Correo Electrónico</label>
                 <div className="mt-1 relative rounded-md shadow-sm">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <MailIcon className="h-5 w-5 text-gray-400" />
                     </div>
-                    <input type="email" id="email-login" value={email} onChange={(e) => setEmail(e.target.value)} required className="block w-full bg-gray-900 border border-gray-600 rounded-md p-3 pl-10 focus:ring-indigo-500 focus:border-indigo-500" placeholder="tu@email.com" />
+                    <input type="email" id="email-login" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="off" className="block w-full bg-gray-900 border border-gray-600 rounded-md p-3 pl-10 focus:ring-indigo-500 focus:border-indigo-500" placeholder="tu@email.com" />
                 </div>
             </div>
             <div>
@@ -38,7 +38,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, toggleView }) => {
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <LockClosedIcon className="h-5 w-5 text-gray-400" />
                     </div>
-                    <input type="password" id="password-login" value={password} onChange={(e) => setPassword(e.target.value)} required className="block w-full bg-gray-900 border border-gray-600 rounded-md p-3 pl-10 focus:ring-indigo-500 focus:border-indigo-500" placeholder="••••••••" />
+                    <input type="password" id="password-login" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="off" className="block w-full bg-gray-900 border border-gray-600 rounded-md p-3 pl-10 focus:ring-indigo-500 focus:border-indigo-500" placeholder="••••••••" />
                 </div>
             </div>
             
