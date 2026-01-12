@@ -7,6 +7,9 @@ import Header from './components/Header';
 import NotificationsModal from './components/NotificationsModal';
 import SettingsModal from './components/SettingsModal';
 
+// Firestore helpers
+import { Raffles, Tickets, setDocument, serverTimestamp } from './services/firestore';
+
 const App: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [raffles, setRaffles] = useState<Raffle[]>([]);
@@ -79,6 +82,43 @@ const App: React.FC = () => {
       }
     }
   }, [users]);
+
+  // Real-time listeners (Firestore) — sync raffles and tickets live when Firebase is configured
+  useEffect(() => {
+    const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
+    if (!firebaseConfigured) return;
+
+    let rafflesUnsub: (() => void) | null = null;
+    let ticketsUnsub: (() => void) | null = null;
+
+    try {
+      rafflesUnsub = Raffles.listen((items: any[]) => {
+        const parsed = items.map((r: any) => ({
+          ...r,
+          createdAt: r.createdAt && typeof r.createdAt === 'object' && typeof r.createdAt.toDate === 'function' ? r.createdAt.toDate() : r.createdAt,
+        }));
+        setRaffles(parsed);
+      });
+
+      ticketsUnsub = Tickets.listen((items: any[]) => {
+        const parsed = items.map((t: any) => ({
+          ...t,
+          purchaseDate: t.purchaseDate && typeof t.purchaseDate === 'object' && typeof t.purchaseDate.toDate === 'function' ? t.purchaseDate.toDate() : t.purchaseDate,
+        }));
+        // Cast parsed to Ticket[] (dates are converted to JS Date when present)
+        setTickets(parsed as any);
+      });
+
+      console.log('Firestore listeners initialized');
+    } catch (err) {
+      console.error('Error initializing Firestore listeners:', err);
+    }
+
+    return () => {
+      if (rafflesUnsub) rafflesUnsub();
+      if (ticketsUnsub) ticketsUnsub();
+    };
+  }, []);
 
   const handleLogin = (email: string, pass: string): { success: boolean; message?: string } => {
     const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
@@ -188,7 +228,7 @@ const App: React.FC = () => {
     }
   };
   
-  const handlePurchaseTicket = (raffleId: string, amount: number, totalCost: number) => {
+  const handlePurchaseTicket = async (raffleId: string, amount: number, totalCost: number) => {
     if (!currentUser) return;
     
     const raffle = raffles.find(r => r.id === raffleId);
@@ -297,6 +337,24 @@ const App: React.FC = () => {
     if (purchasedRaffle?.extraPrizes && purchasedRaffle.extraPrizes.length > 0) {
       setRaffleForRoulette(purchasedRaffle);
     }
+
+    // Persist tickets and raffle changes to Firestore (best-effort)
+    try {
+      // Map tickets to Firestore-friendly objects (omit local-only ids if needed)
+      const ticketsForDb = newTickets.map(t => ({
+        raffleId: t.raffleId,
+        userId: t.userId,
+        ticketNumber: t.ticketNumber,
+        originalUserId: t.originalUserId,
+        transferCount: t.transferCount,
+        purchasedPackInfo: t.purchasedPackInfo,
+      }));
+
+      await Tickets.addBatch(ticketsForDb);
+      await Raffles.incrementSales(raffleId, amount, totalCost);
+    } catch (err) {
+      console.error('Error saving purchase to Firestore:', err);
+    }
   };
 
   const handlePrizeWon = (prize: ExtraPrize, raffleId: string) => {
@@ -314,7 +372,7 @@ const App: React.FC = () => {
     console.log("Prize won and stored:", newUserPrize);
   };
 
-  const handleAddRaffle = (newRaffleData: Omit<Raffle, 'id' | 'soldTickets' | 'currentSales'>) => {
+  const handleAddRaffle = async (newRaffleData: Omit<Raffle, 'id' | 'soldTickets' | 'currentSales'>) => {
     if (currentUser?.role !== UserRole.ADMIN) return;
     const newRaffle: Raffle = {
       ...newRaffleData,
@@ -324,6 +382,14 @@ const App: React.FC = () => {
       extraPrizes: [],
     };
     setRaffles(prev => [newRaffle, ...prev]);
+
+    // Persist raffle to Firestore (best-effort)
+    try {
+      // Use the same local id as the Firestore document id so they stay in sync
+      await setDocument('raffles', newRaffle.id, { ...newRaffle, createdAt: serverTimestamp() });
+    } catch (err) {
+      console.error('Error creating raffle in Firestore:', err);
+    }
   };
   
   const handleUpdateRaffle = (updatedRaffle: Raffle) => {
