@@ -6,6 +6,7 @@ import AuthPage from './pages/AuthPage';
 import Header from './components/Header';
 import NotificationsModal from './components/NotificationsModal';
 import SettingsModal from './components/SettingsModal';
+import Toasts, { Toast } from './components/Toasts';
 
 // Firestore helpers
 import { Raffles, Tickets, setDocument, serverTimestamp } from './services/firestore';
@@ -83,6 +84,15 @@ const App: React.FC = () => {
     }
   }, [users]);
 
+  // Toasts (simple local toasts shown on errors / success)
+  const [toasts, setToasts] = React.useState<Toast[]>([]);
+  const showToast = (message: string, type: Toast['type'] = 'info', ttl = 5000) => {
+    const id = `toast_${Date.now()}`;
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), ttl);
+  };
+  const removeToast = (id: string) => setToasts(prev => prev.filter(t => t.id !== id));
+
   // Real-time listeners (Firestore) — sync raffles and tickets live when Firebase is configured
   useEffect(() => {
     const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
@@ -112,6 +122,7 @@ const App: React.FC = () => {
       console.log('Firestore listeners initialized');
     } catch (err) {
       console.error('Error initializing Firestore listeners:', err);
+      showToast('Error initializing Firestore listeners', 'error');
     }
 
     return () => {
@@ -359,6 +370,7 @@ const App: React.FC = () => {
       await Raffles.incrementSales(raffleId, amount, totalCost);
     } catch (err) {
       console.error('Error saving purchase to Firestore:', err);
+      showToast('Error saving purchase to Firestore. Revisa la consola para más detalles.', 'error');
     }
   };
 
@@ -394,6 +406,7 @@ const App: React.FC = () => {
       await setDocument('raffles', newRaffle.id, { ...newRaffle, createdAt: serverTimestamp() });
     } catch (err) {
       console.error('Error creating raffle in Firestore:', err);
+      showToast('Error creating raffle in Firestore. Revisa la consola para más detalles.', 'error');
     }
   };
   
@@ -576,6 +589,10 @@ const App: React.FC = () => {
             onUpdatePassword={handleUpdatePassword}
         />
       )}
+
+      {/* Toaster (global) */}
+      <Toasts toasts={toasts} onRemove={removeToast} />
+
     </div>
   );
 };
