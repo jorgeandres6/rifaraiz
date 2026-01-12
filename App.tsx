@@ -341,14 +341,19 @@ const App: React.FC = () => {
     // Persist tickets and raffle changes to Firestore (best-effort)
     try {
       // Map tickets to Firestore-friendly objects (omit local-only ids if needed)
-      const ticketsForDb = newTickets.map(t => ({
-        raffleId: t.raffleId,
-        userId: t.userId,
-        ticketNumber: t.ticketNumber,
-        originalUserId: t.originalUserId,
-        transferCount: t.transferCount,
-        purchasedPackInfo: t.purchasedPackInfo,
-      }));
+      const ticketsForDb = newTickets.map(t => {
+        const base: any = {
+          raffleId: t.raffleId,
+          userId: t.userId,
+          ticketNumber: t.ticketNumber,
+          originalUserId: t.originalUserId,
+          transferCount: t.transferCount,
+        };
+        if (t.purchasedPackInfo !== undefined) {
+          base.purchasedPackInfo = t.purchasedPackInfo;
+        }
+        return base;
+      });
 
       await Tickets.addBatch(ticketsForDb);
       await Raffles.incrementSales(raffleId, amount, totalCost);

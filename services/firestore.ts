@@ -113,13 +113,26 @@ export type Ticket = {
   [k: string]: any;
 };
 
+function sanitizeForFirestore(obj: any) {
+  if (!obj || typeof obj !== 'object') return obj;
+  const out: any = {};
+  Object.entries(obj).forEach(([k, v]) => {
+    if (v !== undefined) out[k] = v;
+  });
+  return out;
+}
+
 export const Tickets = {
-  add: (data: Partial<Ticket>) => addDocument<Ticket>("tickets", { ...data, purchaseDate: serverTimestamp() } as Ticket),
+  add: (data: Partial<Ticket>) => {
+    const prepared = sanitizeForFirestore({ ...data, purchaseDate: serverTimestamp() });
+    return addDocument<Ticket>("tickets", prepared as Ticket);
+  },
   addBatch: async (tickets: Partial<Ticket>[]) => {
     const batch = writeBatch(db);
     tickets.forEach(t => {
       const docRef = doc(collection(db, "tickets"));
-      batch.set(docRef, { ...t, purchaseDate: serverTimestamp() });
+      const prepared = sanitizeForFirestore({ ...t, purchaseDate: serverTimestamp() });
+      batch.set(docRef, prepared);
     });
     await batch.commit();
   },
