@@ -4,7 +4,7 @@ service cloud.firestore {
 
     // helper to check admin role by reading the user doc (safer than relying on auth token claims which require admin SDK changes)
     function isAdmin() {
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN';
+      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     // Users collection: users manage their own document, but they cannot change their own role field

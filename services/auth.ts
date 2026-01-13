@@ -50,7 +50,7 @@ export async function signupWithEmail({ name, email, password, phone, city, refe
     city: city || null,
     referralCode: generatedReferralCode,
     referredBy: null,
-    role: 'USER',
+    role: 'user',
     createdAt: new Date().toISOString(),
   } as any;
 
@@ -98,7 +98,7 @@ export async function signInWithGoogle() {
         city: null,
         referralCode: generatedReferralCode,
         referredBy: null,
-        role: 'USER',
+        role: 'user',
         createdAt: new Date().toISOString(),
       } as any;
       await setDoc(userDocRef, userData);

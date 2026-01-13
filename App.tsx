@@ -156,11 +156,15 @@ const App: React.FC = () => {
         // Subscribe in real-time to the users/{uid} document so role changes or profile updates reflect immediately
         userDocUnsub = listenToUser(u.uid, (docData: any | null) => {
           if (docData) {
+            const rawRole = (docData.role || '') as string;
+            const roleValue = rawRole.toLowerCase();
+            const normalizedRole = roleValue === UserRole.ADMIN ? UserRole.ADMIN : roleValue === UserRole.INACTIVE ? UserRole.INACTIVE : UserRole.USER;
+
             setCurrentUser({
               id: docData.id || u.uid,
               name: docData.name || u.displayName || '',
               email: docData.email || '',
-              role: (docData.role as any) || UserRole.USER,
+              role: normalizedRole,
               referralCode: docData.referralCode || '',
               upline: docData.upline || [],
               emailVerified: u.emailVerified,
@@ -253,11 +257,16 @@ const App: React.FC = () => {
       if (!res.success) return { success: false, message: res.message || 'Error iniciando con Google.' };
       const doc = await getUserDoc(res.user.uid);
       if (!doc) return { success: false, message: 'No se encontró el usuario en la base de datos.' };
+      // Normalize role to match local enum (lowercase values)
+      const rawRole = (doc.role || '') as string;
+      const roleValue = rawRole.toLowerCase();
+      const normalizedRole = roleValue === UserRole.ADMIN ? UserRole.ADMIN : roleValue === UserRole.INACTIVE ? UserRole.INACTIVE : UserRole.USER;
+
       setCurrentUser({
         id: doc.id || res.user.uid,
         name: doc.name || res.user.displayName || '',
         email: doc.email || '',
-        role: (doc.role as any) || UserRole.USER,
+        role: normalizedRole,
         referralCode: doc.referralCode || '',
         upline: doc.upline || [],
       } as any);
