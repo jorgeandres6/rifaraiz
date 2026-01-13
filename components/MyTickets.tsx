@@ -39,7 +39,9 @@ const MyTickets: React.FC<MyTicketsProps> = ({ tickets, raffles, users, onTransf
     return Object.values(groupedByRaffle).map(({ raffle, tickets: raffleTickets }) => {
         const purchases = new Map<number, Ticket[]>();
         raffleTickets.forEach(ticket => {
-            const key = ticket.purchaseDate.getTime();
+            // Ensure purchaseDate is a Date (some tickets may come with string/null values from different sources)
+            const pd = ticket.purchaseDate instanceof Date ? ticket.purchaseDate : new Date(ticket.purchaseDate || 0);
+            const key = pd.getTime();
             if (!purchases.has(key)) {
                 purchases.set(key, []);
             }
