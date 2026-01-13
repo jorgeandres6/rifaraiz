@@ -6,14 +6,16 @@ interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdatePassword: (currentPass: string, newPass: string) => boolean;
+  onSendVerification?: () => Promise<{ success: boolean; message?: string }>;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onUpdatePassword }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onUpdatePassword, onSendVerification }) => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [sendingVerification, setSendingVerification] = useState(false);
 
   if (!isOpen) return null;
 
@@ -143,20 +145,46 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onUpdate
                 </div>
             )}
 
-            <div className="pt-4 flex justify-end gap-3">
-                 <button 
-                    type="button" 
-                    onClick={onClose}
-                    className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors"
-                >
-                    Cancelar
-                </button>
-                <button 
-                    type="submit" 
-                    className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors shadow-lg"
-                >
-                    Actualizar Contraseña
-                </button>
+            <div className="pt-4 flex justify-between items-center">
+                <div>
+                    <button
+                        type="button"
+                        onClick={async () => {
+                            if (!onSendVerification) return;
+                            setSendingVerification(true);
+                            setError('');
+                            const res = await onSendVerification();
+                            setSendingVerification(false);
+                            if (res.success) {
+                                setSuccess('Correo de verificación enviado. Revisa tu buzón.');
+                                setTimeout(() => setSuccess(''), 4000);
+                            } else {
+                                setError(res.message || 'No se pudo enviar el correo de verificación.');
+                                setTimeout(() => setError(''), 4000);
+                            }
+                        }}
+                        disabled={sendingVerification}
+                        className="px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-md hover:bg-yellow-700 transition-colors mr-4"
+                    >
+                        {sendingVerification ? 'Enviando...' : 'Reenviar verificación'}
+                    </button>
+                </div>
+
+                <div className="flex justify-end gap-3">
+                    <button 
+                        type="button" 
+                        onClick={onClose}
+                        className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors"
+                    >
+                        Cancelar
+                    </button>
+                    <button 
+                        type="submit" 
+                        className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors shadow-lg"
+                    >
+                        Actualizar Contraseña
+                    </button>
+                </div>
             </div>
         </form>
       </div>

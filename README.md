@@ -54,7 +54,16 @@ const q = firestoreQuery(collection(db, "raffles"), orderBy("createdAt", "desc")
 const items = await getCollection("raffles", q);
 ```
 
-5. En Vercel, añade las mismas variables de entorno en la sección Environment Variables para producción.
+5. Activa los proveedores de autenticación en la consola de Firebase (Authentication → Sign-in method):
+   - Habilita **Email/Password** para permitir registro e inicio de sesión con correo/contraseña.
+   - Habilita **Google** para permitir inicio con cuenta Google. Asegúrate de añadir `http://localhost:5173` (o tu dominio) en **Authorized domains** y configurar credenciales si solicitan.
+
+6. Email verification & security rules
+   - El flujo de registro ahora envía automáticamente un correo de verificación. Los usuarios deben verificar su dirección antes de iniciar sesión con Email/Password.
+   - Puedes reenviar el correo de verificación desde la **Configuración** en la app.
+   - He incluido un archivo `firestore.rules` con reglas de ejemplo (limita acceso a usuarios autenticados, propietarios y admins). Revisión y ajustes según tu modelo de roles son recomendados.
+
+7. En Vercel, añade las mismas variables de entorno en la sección Environment Variables para producción.
 ---
 
 ## 🚀 Despliegue en Vercel

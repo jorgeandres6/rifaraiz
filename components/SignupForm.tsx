@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { MailIcon, LockClosedIcon, UserCircleIcon, PhoneIcon, MapPinIcon } from './icons';
 
 interface SignupFormProps {
-    onSignup: (name: string, email: string, pass: string, phone: string, city: string, referralCode?: string) => { success: boolean; message?: string };
+    onSignup: (name: string, email: string, pass: string, phone: string, city: string, referralCode?: string) => Promise<{ success: boolean; message?: string }>;
     toggleView: () => void;
 }
 
@@ -14,17 +14,25 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSignup, toggleView }) => {
     const [city, setCity] = useState('');
     const [referralCode, setReferralCode] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         if (password.length < 6) {
             setError('La contraseña debe tener al menos 6 caracteres.');
             return;
         }
-        const result = onSignup(name, email, password, phone, city, referralCode);
-        if (!result.success) {
-            setError(result.message || 'No se pudo crear la cuenta.');
+        setLoading(true);
+        try {
+            const result = await onSignup(name, email, password, phone, city, referralCode);
+            if (!result.success) {
+                setError(result.message || 'No se pudo crear la cuenta.');
+            }
+        } catch (err) {
+            setError('Error al crear la cuenta. Por favor intenta de nuevo.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -84,8 +92,8 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSignup, toggleView }) => {
             
             {error && <p className="text-sm text-red-400">{error}</p>}
 
-            <button type="submit" className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-gray-800">
-                Crear Cuenta
+            <button type="submit" disabled={loading} className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${loading ? 'bg-indigo-500 cursor-wait' : 'bg-indigo-600 hover:bg-indigo-700'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-gray-800`}>
+                {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
             </button>
 
             <p className="text-sm text-center text-gray-400">

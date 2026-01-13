@@ -4,11 +4,12 @@ import SignupForm from '../components/SignupForm';
 import logoRR from '../src/img/logoRR.png';
 
 interface AuthPageProps {
-    onLogin: (email: string, pass: string) => { success: boolean; message?: string };
-    onSignup: (name: string, email: string, pass: string, phone: string, city: string, referralCode?: string) => { success: boolean; message?: string };
+    onLogin: (email: string, pass: string) => Promise<{ success: boolean; message?: string }>;
+    onSignup: (name: string, email: string, pass: string, phone: string, city: string, referralCode?: string) => Promise<{ success: boolean; message?: string }>;
+    onGoogle?: () => Promise<{ success: boolean; message?: string }>;
 }
 
-const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onSignup }) => {
+const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onSignup, onGoogle }) => {
     const [isLoginView, setIsLoginView] = useState(true);
 
     const toggleView = () => setIsLoginView(!isLoginView);
@@ -25,7 +26,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onSignup }) => {
 
                 <div className="bg-gray-800 rounded-lg shadow-xl p-8">
                     {isLoginView ? (
-                        <LoginForm onLogin={onLogin} toggleView={toggleView} />
+                        <LoginForm onLogin={onLogin} onGoogle={onGoogle} toggleView={toggleView} />
                     ) : (
                         <SignupForm onSignup={onSignup} toggleView={toggleView} />
                     )}

@@ -131,7 +131,74 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const handleLogin = (email: string, pass: string): { success: boolean; message?: string } => {
+  // If Firebase is configured, listen to auth state and sync current user with Firestore 'users' doc
+  useEffect(() => {
+    const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
+    if (!firebaseConfigured) return;
+
+    let unsub: (() => void) | null = null;
+    import('./services/auth').then(({ onAuthState, getUserDoc }) => {
+      unsub = onAuthState(async (u: any) => {
+        if (!u) {
+          setCurrentUser(null);
+          localStorage.removeItem('loggedInUserId');
+          return;
+        }
+        // Fetch Firestore doc if exists and merge
+        const doc = await getUserDoc(u.uid);
+        if (doc) {
+          setCurrentUser({
+            id: doc.id || u.uid,
+            name: doc.name || u.displayName || '',
+            email: doc.email || '',
+            role: (doc.role as any) || UserRole.USER,
+            referralCode: doc.referralCode || '',
+            upline: doc.upline || [],
+            emailVerified: u.emailVerified,
+          } as any);
+          localStorage.setItem('loggedInUserId', doc.id || u.uid);
+        } else {
+          // If no Firestore doc exists, clear current user
+          setCurrentUser(null);
+          localStorage.removeItem('loggedInUserId');
+        }
+
+        if (u && !u.emailVerified) {
+          showToast('Tu correo no está verificado. Revisa tu bandeja y confirma tu cuenta.', 'warning', 8000);
+        }
+      });
+    }).catch(err => console.error('Auth listener error', err));
+
+    return () => {
+      if (unsub) unsub();
+    };
+  }, []);
+
+  const handleLogin = async (email: string, pass: string): Promise<{ success: boolean; message?: string }> => {
+    const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
+    if (firebaseConfigured) {
+      try {
+        const { loginWithEmail, getUserDoc } = await import('./services/auth');
+        const res = await loginWithEmail(email, pass);
+        if (!res.success) return { success: false, message: 'Credenciales inválidas.' };
+        const doc = await getUserDoc(res.user.uid);
+        if (!doc) return { success: false, message: 'No se encontró el usuario en la base de datos.' };
+        setCurrentUser({
+          id: doc.id || res.user.uid,
+          name: doc.name || res.user.displayName || '',
+          email: doc.email || '',
+          role: (doc.role as any) || UserRole.USER,
+          referralCode: doc.referralCode || '',
+          upline: doc.upline || [],
+        } as any);
+        localStorage.setItem('loggedInUserId', doc.id || res.user.uid);
+        return { success: true };
+      } catch (err: any) {
+        return { success: false, message: err?.message || 'Error al iniciar sesión con Firebase.' };
+      }
+    }
+
+    // Fallback: local users JSON auth
     const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
 
     if (!user) {
@@ -153,12 +220,76 @@ const App: React.FC = () => {
     return { success: false, message: "Credenciales inválidas. Por favor, inténtalo de nuevo." };
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
+    if (firebaseConfigured) {
+      try {
+        const { logout } = await import('./services/auth');
+        await logout();
+      } catch (err) {
+        console.error('Error logging out from Firebase', err);
+      }
+    }
     setCurrentUser(null);
     localStorage.removeItem('loggedInUserId');
   };
 
-  const handleSignup = (name: string, email: string, pass: string, phone: string, city: string, referralCode?: string): { success: boolean; message?: string } => {
+  const handleGoogleSignIn = async (): Promise<{ success: boolean; message?: string }> => {
+    const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
+    if (!firebaseConfigured) return { success: false, message: 'Firebase no está configurado.' };
+    try {
+      const { signInWithGoogle, getUserDoc } = await import('./services/auth');
+      const res = await signInWithGoogle();
+      if (!res.success) return { success: false, message: res.message || 'Error iniciando con Google.' };
+      const doc = await getUserDoc(res.user.uid);
+      if (!doc) return { success: false, message: 'No se encontró el usuario en la base de datos.' };
+      setCurrentUser({
+        id: doc.id || res.user.uid,
+        name: doc.name || res.user.displayName || '',
+        email: doc.email || '',
+        role: (doc.role as any) || UserRole.USER,
+        referralCode: doc.referralCode || '',
+        upline: doc.upline || [],
+      } as any);
+      localStorage.setItem('loggedInUserId', doc.id || res.user.uid);
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Error al iniciar con Google.' };
+    }
+  };
+
+  const handleResendVerification = async (): Promise<{ success: boolean; message?: string }> => {
+    const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
+    if (!firebaseConfigured) return { success: false, message: 'Firebase no está configurado.' };
+    try {
+      const { resendVerificationEmail } = await import('./services/auth');
+      const res = await resendVerificationEmail();
+      if (res.success) {
+        showToast('Correo de verificación reenviado. Revisa tu bandeja.', 'info', 5000);
+        return { success: true };
+      }
+      return { success: false, message: res.message };
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'No se pudo reenviar el correo.' };
+    }
+  };
+
+  const handleSignup = async (name: string, email: string, pass: string, phone: string, city: string, referralCode?: string): Promise<{ success: boolean; message?: string }> => {
+    const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
+    if (firebaseConfigured) {
+      try {
+        const { signupWithEmail } = await import('./services/auth');
+        const res = await signupWithEmail({ name, email, password: pass, phone, city, referralCode });
+        if (!res.success) return { success: false, message: res.message || 'No se pudo crear la cuenta.' };
+        // After sign up, onAuthState listener should pick it up; but set current user optimistically
+        setCurrentUser({ id: res.user.uid, name: name, email, role: UserRole.USER, referralCode: '' } as any);
+        localStorage.setItem('loggedInUserId', res.user.uid);
+        return { success: true };
+      } catch (err: any) {
+        return { success: false, message: err?.message || 'Error al crear la cuenta con Firebase.' };
+      }
+    }
+
     if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
       return { success: false, message: "El correo electrónico ya está en uso." };
     }
@@ -537,7 +668,7 @@ const App: React.FC = () => {
   }
 
   if (!currentUser) {
-    return <AuthPage onLogin={handleLogin} onSignup={handleSignup} />;
+    return <AuthPage onLogin={handleLogin} onSignup={handleSignup} onGoogle={handleGoogleSignIn} />;
   }
 
   const myNotifications = notifications.filter(n => n.userId === currentUser.id);
@@ -587,6 +718,7 @@ const App: React.FC = () => {
             isOpen={showSettings}
             onClose={() => setShowSettings(false)}
             onUpdatePassword={handleUpdatePassword}
+            onSendVerification={handleResendVerification}
         />
       )}
 
