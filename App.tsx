@@ -592,15 +592,34 @@ const App: React.FC = () => {
       setNotifications(prev => [newNotif, ...prev]);
   };
 
-  const handleTransferTickets = (ticketIds: string[], recipientEmail: string): { success: boolean; message?: string } => {
+  const handleTransferTickets = async (ticketIds: string[], recipientEmail: string): Promise<{ success: boolean; message?: string }> => {
     if (!currentUser) {
         return { success: false, message: "Debes iniciar sesión para realizar una transferencia." };
     }
 
-    const recipient = users.find(u => u.email.toLowerCase() === recipientEmail.toLowerCase());
-    if (!recipient) {
-      return { success: false, message: "Usuario no registrado. Verifica el correo electrónico." };
+    const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
+
+    let recipient: any = null;
+
+    if (firebaseConfigured) {
+      try {
+        const { getUserDoc, sanitizeEmail } = await import('./services/auth');
+        const doc = await getUserDoc(recipientEmail);
+        if (!doc) {
+          return { success: false, message: "Usuario no registrado. Verifica el correo electrónico." };
+        }
+        recipient = { id: doc.id, ...doc };
+      } catch (err: any) {
+        console.error('Error buscando usuario en Firestore:', err);
+        return { success: false, message: 'Error buscando usuario. Intenta de nuevo.' };
+      }
+    } else {
+      recipient = users.find(u => u.email.toLowerCase() === recipientEmail.toLowerCase());
+      if (!recipient) {
+        return { success: false, message: "Usuario no registrado. Verifica el correo electrónico." };
+      }
     }
+
     if (recipient.id === currentUser.id) {
       return { success: false, message: "No puedes transferirte boletos a ti mismo." };
     }

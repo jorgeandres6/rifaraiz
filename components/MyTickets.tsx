@@ -7,7 +7,7 @@ interface MyTicketsProps {
   tickets: Ticket[];
   raffles: Raffle[];
   users: User[];
-  onTransferTickets: (ticketIds: string[], recipientEmail: string) => { success: boolean; message?: string };
+  onTransferTickets: (ticketIds: string[], recipientEmail: string) => Promise<{ success: boolean; message?: string }>;
 }
 
 type DisplayItem = {

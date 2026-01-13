@@ -7,7 +7,7 @@ interface TransferModalProps {
   onClose: () => void;
   raffleTitle: string;
   tickets: Ticket[];
-  onTransfer: (ticketIds: string[], recipientEmail: string) => { success: boolean; message?: string };
+  onTransfer: (ticketIds: string[], recipientEmail: string) => Promise<{ success: boolean; message?: string }>;
 }
 
 const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, raffleTitle, tickets, onTransfer }) => {
@@ -15,6 +15,7 @@ const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, raffleTi
   const [recipientEmail, setRecipientEmail] = useState('');
   const [error, setError] = useState('');
   const [successData, setSuccessData] = useState<{ count: number; email: string } | null>(null);
+  const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
 
@@ -24,7 +25,7 @@ const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, raffleTi
     );
   };
 
-  const handleTransfer = (e: React.FormEvent) => {
+  const handleTransfer = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     if (selectedTicketIds.length === 0) {
@@ -35,13 +36,20 @@ const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, raffleTi
       setError('Debes ingresar el correo electrónico del destinatario.');
       return;
     }
-    
-    const result = onTransfer(selectedTicketIds, recipientEmail);
-    if (result.success) {
-      setSuccessData({ count: selectedTicketIds.length, email: recipientEmail });
-      setSelectedTicketIds([]);
-    } else {
-      setError(result.message || 'Ocurrió un error desconocido durante la transferencia.');
+
+    setLoading(true);
+    try {
+      const result = await onTransfer(selectedTicketIds, recipientEmail);
+      if (result.success) {
+        setSuccessData({ count: selectedTicketIds.length, email: recipientEmail });
+        setSelectedTicketIds([]);
+      } else {
+        setError(result.message || 'Ocurrió un error desconocido durante la transferencia.');
+      }
+    } catch (err) {
+      setError('Error al realizar la transferencia. Por favor intenta de nuevo.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -149,10 +157,11 @@ const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, raffleTi
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 flex items-center"
+                disabled={loading}
+                className={`px-4 py-2 text-sm font-medium text-white rounded-md flex items-center ${loading ? 'bg-indigo-500 cursor-wait' : 'bg-indigo-600 hover:bg-indigo-700'}`}
               >
                 <PaperAirplaneIcon className="h-5 w-5 mr-2" />
-                Confirmar Transferencia
+                {loading ? 'Transfiriendo...' : 'Confirmar Transferencia'}
               </button>
             </div>
           </form>
