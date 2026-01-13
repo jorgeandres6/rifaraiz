@@ -137,40 +137,50 @@ const App: React.FC = () => {
     if (!firebaseConfigured) return;
 
     let unsub: (() => void) | null = null;
-    import('./services/auth').then(({ onAuthState, getUserDoc }) => {
+    let userDocUnsub: (() => void) | null = null;
+
+    import('./services/auth').then(({ onAuthState, listenToUser, getUserDoc }) => {
       unsub = onAuthState(async (u: any) => {
+        // Clean previous subscription
+        if (userDocUnsub) {
+          try { userDocUnsub(); } catch (e) { /* ignore */ }
+          userDocUnsub = null;
+        }
+
         if (!u) {
           setCurrentUser(null);
           localStorage.removeItem('loggedInUserId');
           return;
         }
-        // Fetch Firestore doc if exists and merge
-        const doc = await getUserDoc(u.uid);
-        if (doc) {
-          setCurrentUser({
-            id: doc.id || u.uid,
-            name: doc.name || u.displayName || '',
-            email: doc.email || '',
-            role: (doc.role as any) || UserRole.USER,
-            referralCode: doc.referralCode || '',
-            upline: doc.upline || [],
-            emailVerified: u.emailVerified,
-          } as any);
-          localStorage.setItem('loggedInUserId', doc.id || u.uid);
-        } else {
-          // If no Firestore doc exists, clear current user
-          setCurrentUser(null);
-          localStorage.removeItem('loggedInUserId');
-        }
+
+        // Subscribe in real-time to the users/{uid} document so role changes or profile updates reflect immediately
+        userDocUnsub = listenToUser(u.uid, (docData: any | null) => {
+          if (docData) {
+            setCurrentUser({
+              id: docData.id || u.uid,
+              name: docData.name || u.displayName || '',
+              email: docData.email || '',
+              role: (docData.role as any) || UserRole.USER,
+              referralCode: docData.referralCode || '',
+              upline: docData.upline || [],
+              emailVerified: u.emailVerified,
+            } as any);
+            localStorage.setItem('loggedInUserId', docData.id || u.uid);
+          } else {
+            setCurrentUser(null);
+            localStorage.removeItem('loggedInUserId');
+          }
+        });
 
         if (u && !u.emailVerified) {
-          showToast('Tu correo no está verificado. Revisa tu bandeja y confirma tu cuenta.', 'warning', 8000);
+          showToast('Tu correo no está verificado. Revisa tu bandeja y confirma tu cuenta.', 'info', 8000);
         }
       });
     }).catch(err => console.error('Auth listener error', err));
 
     return () => {
       if (unsub) unsub();
+      if (userDocUnsub) userDocUnsub();
     };
   }, []);
 

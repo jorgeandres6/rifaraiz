@@ -1,12 +1,25 @@
 import { auth, db } from './firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as firebaseSignOut, updateProfile, onAuthStateChanged, User as FirebaseUser, sendEmailVerification, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { doc, setDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 
 export interface AuthUser {
   uid: string;
   email: string | null;
   displayName?: string | null;
   emailVerified?: boolean;
+}
+
+// Listen to the Firestore user document in real-time and return an unsubscribe function
+export function listenToUser(uid: string, cb: (data: any | null) => void) {
+  const docRef = doc(db, 'users', uid);
+  const unsub = onSnapshot(docRef, (snap) => {
+    if (!snap.exists()) return cb(null);
+    cb(snap.data());
+  }, (err) => {
+    console.error('listenToUser error', err);
+    cb(null);
+  });
+  return unsub;
 }
 
 export async function signupWithEmail({ name, email, password, phone, city, referralCode }: { name: string; email: string; password: string; phone?: string; city?: string; referralCode?: string }) {
@@ -67,30 +80,34 @@ export async function loginWithEmail(email: string, password: string) {
 }
 
 export async function signInWithGoogle() {
-  const provider = new GoogleAuthProvider();
-  const res = await signInWithPopup(auth, provider);
-  const fbUser = res.user;
+  try {
+    const provider = new GoogleAuthProvider();
+    const res = await signInWithPopup(auth, provider);
+    const fbUser = res.user;
 
-  // Ensure user doc exists in Firestore
-  const userDocRef = doc(db, 'users', fbUser.uid);
-  const existing = await getDoc(userDocRef);
-  if (!existing.exists()) {
-    const generatedReferralCode = (fbUser.displayName || 'user').toUpperCase().substring(0, 4) + String(Date.now()).slice(-3);
-    const userData = {
-      id: fbUser.uid,
-      name: fbUser.displayName || '',
-      email: fbUser.email,
-      phone: null,
-      city: null,
-      referralCode: generatedReferralCode,
-      referredBy: null,
-      role: 'USER',
-      createdAt: new Date().toISOString(),
-    } as any;
-    await setDoc(userDocRef, userData);
+    // Ensure user doc exists in Firestore
+    const userDocRef = doc(db, 'users', fbUser.uid);
+    const existing = await getDoc(userDocRef);
+    if (!existing.exists()) {
+      const generatedReferralCode = (fbUser.displayName || 'user').toUpperCase().substring(0, 4) + String(Date.now()).slice(-3);
+      const userData = {
+        id: fbUser.uid,
+        name: fbUser.displayName || '',
+        email: fbUser.email,
+        phone: null,
+        city: null,
+        referralCode: generatedReferralCode,
+        referredBy: null,
+        role: 'USER',
+        createdAt: new Date().toISOString(),
+      } as any;
+      await setDoc(userDocRef, userData);
+    }
+
+    return { success: true, user: { uid: fbUser.uid, email: fbUser.email, displayName: fbUser.displayName, emailVerified: fbUser.emailVerified } as AuthUser };
+  } catch (err: any) {
+    return { success: false, message: err?.message || 'Error iniciando sesión con Google' };
   }
-
-  return { success: true, user: { uid: fbUser.uid, email: fbUser.email, displayName: fbUser.displayName, emailVerified: fbUser.emailVerified } as AuthUser };
 }
 
 export async function resendVerificationEmail() {

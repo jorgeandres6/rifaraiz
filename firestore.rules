@@ -2,29 +2,35 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Users collection: users manage their own document
+    // helper to check admin role by reading the user doc (safer than relying on auth token claims which require admin SDK changes)
+    function isAdmin() {
+      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN';
+    }
+
+    // Users collection: users manage their own document, but they cannot change their own role field
     match /users/{userId} {
-      allow read, update: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && request.auth.uid == userId;
       allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId && request.resource.data.role == resource.data.role;
       allow delete: if false; // don't allow deletes from client
     }
 
     // Raffles: public reads, only admins can create/modify
     match /raffles/{raffleId} {
       allow read: if true;
-      allow create, update, delete: if request.auth != null && request.auth.token.role == 'ADMIN';
+      allow create, update, delete: if isAdmin();
     }
 
     // Tickets: owners can create and read their tickets, admins can read all
     match /tickets/{ticketId} {
       allow create: if request.auth != null && request.resource.data.owner == request.auth.uid;
-      allow read: if request.auth != null && (resource.data.owner == request.auth.uid || request.auth.token.role == 'ADMIN');
+      allow read: if request.auth != null && (resource.data.owner == request.auth.uid || isAdmin());
       allow update, delete: if false;
     }
 
     // Commissions: only admins can access
     match /commissions/{docId} {
-      allow read, write: if request.auth != null && request.auth.token.role == 'ADMIN';
+      allow read, write: if isAdmin();
     }
 
     // Default: deny
