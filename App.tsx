@@ -153,8 +153,8 @@ const App: React.FC = () => {
           return;
         }
 
-        // Subscribe in real-time to the users/{uid} document so role changes or profile updates reflect immediately
-        userDocUnsub = listenToUser(u.uid, (docData: any | null) => {
+        // Subscribe in real-time to the users/{sanitizedEmail} document so role changes or profile updates reflect immediately
+        userDocUnsub = listenToUser(u.email || u.uid, (docData: any | null) => {
           if (docData) {
             const rawRole = (docData.role || '') as string;
             const roleValue = rawRole.toLowerCase();
@@ -255,7 +255,7 @@ const App: React.FC = () => {
       const { signInWithGoogle, getUserDoc } = await import('./services/auth');
       const res = await signInWithGoogle();
       if (!res.success) return { success: false, message: res.message || 'Error iniciando con Google.' };
-      const doc = await getUserDoc(res.user.uid);
+      const doc = await getUserDoc(res.user.email || res.user.uid);
       if (!doc) return { success: false, message: 'No se encontró el usuario en la base de datos.' };
       // Normalize role to match local enum (lowercase values)
       const rawRole = (doc.role || '') as string;

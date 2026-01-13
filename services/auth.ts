@@ -9,9 +9,19 @@ export interface AuthUser {
   emailVerified?: boolean;
 }
 
+export function sanitizeEmail(email: string) {
+  if (!email) return '';
+  return encodeURIComponent(email.toLowerCase());
+}
+
 // Listen to the Firestore user document in real-time and return an unsubscribe function
-export function listenToUser(uid: string, cb: (data: any | null) => void) {
-  const docRef = doc(db, 'users', uid);
+// The `identifier` can be either a sanitized id, a raw email, or a uid (for backward compatibility)
+export function listenToUser(identifier: string, cb: (data: any | null) => void) {
+  let id = identifier || '';
+  if (id.includes('@')) {
+    id = sanitizeEmail(id);
+  }
+  const docRef = doc(db, 'users', id);
   const unsub = onSnapshot(docRef, (snap) => {
     if (!snap.exists()) return cb(null);
     cb(snap.data());
@@ -40,10 +50,12 @@ export async function signupWithEmail({ name, email, password, phone, city, refe
   // build a referral code
   const generatedReferralCode = (name || 'user').toUpperCase().substring(0, 4) + String(Date.now()).slice(-3);
 
-  // Save user metadata in Firestore
-  const userDocRef = doc(db, 'users', fbUser.uid);
+  // Save user metadata in Firestore (document id = sanitized email). Keep firebase uid for reference
+  const docId = sanitizeEmail(fbUser.email || fbUser.uid);
+  const userDocRef = doc(db, 'users', docId);
   const userData = {
-    id: fbUser.uid,
+    id: docId,
+    firebaseUid: fbUser.uid,
     name,
     email,
     phone: phone || null,
@@ -85,13 +97,15 @@ export async function signInWithGoogle() {
     const res = await signInWithPopup(auth, provider);
     const fbUser = res.user;
 
-    // Ensure user doc exists in Firestore
-    const userDocRef = doc(db, 'users', fbUser.uid);
+    // Ensure user doc exists in Firestore (document id = sanitized email)
+    const docId = sanitizeEmail(fbUser.email || fbUser.uid);
+    const userDocRef = doc(db, 'users', docId);
     const existing = await getDoc(userDocRef);
     if (!existing.exists()) {
       const generatedReferralCode = (fbUser.displayName || 'user').toUpperCase().substring(0, 4) + String(Date.now()).slice(-3);
       const userData = {
-        id: fbUser.uid,
+        id: docId,
+        firebaseUid: fbUser.uid,
         name: fbUser.displayName || '',
         email: fbUser.email,
         phone: null,
@@ -132,7 +146,10 @@ export function onAuthState(cb: (user: AuthUser | null) => void) {
   });
 }
 
-export async function getUserDoc(uid: string) {
-  const d = await getDoc(doc(db, 'users', uid));
+export async function getUserDoc(identifier: string) {
+  if (!identifier) return null;
+  let id = identifier;
+  if (identifier.includes('@')) id = sanitizeEmail(identifier);
+  const d = await getDoc(doc(db, 'users', id));
   return d.exists() ? d.data() : null;
 }
