@@ -615,7 +615,18 @@ interface UserManagementProps {
 const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, onAddNotification }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
-    const [formData, setFormData] = useState({ name: '', email: '', role: UserRole.USER });
+    const [formData, setFormData] = useState<any>({
+      name: '',
+      phone: '',
+      city: '',
+      country: '',
+      paymentMethod: 'bank',
+      bankName: '',
+      accountNumber: '',
+      accountType: 'ahorro',
+      cryptoWalletAddress: '',
+      cryptoWalletType: ''
+    });
   
     // Message Modal State
     const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
@@ -627,9 +638,20 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
 
     const handleEditClick = (user: User) => {
       setEditingUser(user);
-      setFormData({ name: user.name, email: user.email, role: user.role });
+      setFormData({
+        name: user.name || '',
+        phone: user.phone || '',
+        city: user.city || '',
+        country: user.country || '',
+        paymentMethod: user.bankAccount ? 'bank' : (user.cryptoWallet ? 'crypto' : 'bank'),
+        bankName: user.bankAccount?.bankName || '',
+        accountNumber: user.bankAccount?.accountNumber || '',
+        accountType: user.bankAccount?.accountType || 'ahorro',
+        cryptoWalletAddress: user.cryptoWallet?.address || '',
+        cryptoWalletType: user.cryptoWallet?.walletType || ''
+      });
       setIsModalOpen(true);
-    };
+    }; 
   
     const handleCloseModal = () => {
       setIsModalOpen(false);
@@ -638,16 +660,32 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
   
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       const { name, value } = e.target;
-      setFormData(prev => ({ ...prev, [name]: value as UserRole }));
-    };
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }; 
   
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
       if (editingUser) {
-        onUpdateUser({ ...editingUser, ...formData });
+        const updatedUser: User = {
+          ...editingUser,
+          name: formData.name,
+          phone: formData.phone,
+          city: formData.city,
+          country: formData.country,
+          bankAccount: formData.paymentMethod === 'bank' ? {
+            bankName: formData.bankName,
+            accountNumber: formData.accountNumber,
+            accountType: formData.accountType,
+          } : undefined,
+          cryptoWallet: formData.paymentMethod === 'crypto' ? {
+            address: formData.cryptoWalletAddress,
+            walletType: formData.cryptoWalletType,
+          } : undefined,
+        };
+        onUpdateUser(updatedUser);
         handleCloseModal();
       }
-    };
+    }; 
 
     const handleResetPassword = (user: User) => {
       if (window.confirm(`¿Estás seguro de restablecer la contraseña de "${user.name}" a "rifaraiz2026"?`)) {
@@ -798,18 +836,63 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
                     <label htmlFor="name" className="block text-sm font-medium text-gray-300">Nombre</label>
                     <input type="text" id="name" name="name" value={formData.name} onChange={handleFormChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" />
                   </div>
+
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-300">Correo Electrónico</label>
-                    <input type="email" id="email" name="email" value={formData.email} onChange={handleFormChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                    <label htmlFor="phone" className="block text-sm font-medium text-gray-300">Teléfono</label>
+                    <input type="text" id="phone" name="phone" value={formData.phone} onChange={handleFormChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" />
                   </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="city" className="block text-sm font-medium text-gray-300">Ciudad</label>
+                      <input type="text" id="city" name="city" value={formData.city} onChange={handleFormChange} placeholder="Quito" className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                    </div>
+                    <div>
+                      <label htmlFor="country" className="block text-sm font-medium text-gray-300">País</label>
+                      <input type="text" id="country" name="country" value={formData.country} onChange={handleFormChange} placeholder="Ecuador" className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                    </div>
+                  </div>
+
                   <div>
-                    <label htmlFor="role" className="block text-sm font-medium text-gray-300">Rol</label>
-                    <select id="role" name="role" value={formData.role} onChange={handleFormChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500">
-                      <option value={UserRole.USER}>Usuario</option>
-                      <option value={UserRole.ADMIN}>Administrador</option>
-                      <option value={UserRole.INACTIVE}>Inactivo</option>
+                    <label htmlFor="paymentMethod" className="block text-sm font-medium text-gray-300">Método de Pago</label>
+                    <select id="paymentMethod" name="paymentMethod" value={formData.paymentMethod} onChange={handleFormChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500">
+                      <option value="bank">Cuenta Bancaria</option>
+                      <option value="crypto">Billetera Crypto</option>
                     </select>
                   </div>
+
+                  {formData.paymentMethod === 'bank' && (
+                    <>
+                      <div>
+                        <label htmlFor="bankName" className="block text-sm font-medium text-gray-300">Banco</label>
+                        <input id="bankName" name="bankName" value={formData.bankName} onChange={handleFormChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                      </div>
+                      <div>
+                        <label htmlFor="accountNumber" className="block text-sm font-medium text-gray-300">Número de Cuenta</label>
+                        <input id="accountNumber" name="accountNumber" value={formData.accountNumber} onChange={handleFormChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                      </div>
+                      <div>
+                        <label htmlFor="accountType" className="block text-sm font-medium text-gray-300">Tipo de Cuenta</label>
+                        <select id="accountType" name="accountType" value={formData.accountType} onChange={handleFormChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500">
+                          <option value="ahorro">Ahorro</option>
+                          <option value="corriente">Corriente</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
+
+                  {formData.paymentMethod === 'crypto' && (
+                    <>
+                      <div>
+                        <label htmlFor="cryptoWalletAddress" className="block text-sm font-medium text-gray-300">Dirección de Wallet</label>
+                        <input id="cryptoWalletAddress" name="cryptoWalletAddress" value={formData.cryptoWalletAddress} onChange={handleFormChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                      </div>
+                      <div>
+                        <label htmlFor="cryptoWalletType" className="block text-sm font-medium text-gray-300">Tipo de Wallet</label>
+                        <input id="cryptoWalletType" name="cryptoWalletType" value={formData.cryptoWalletType} onChange={handleFormChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                      </div>
+                    </>
+                  )}
                 </div>
                 <div className="mt-6 flex justify-end space-x-3">
                   <button type="button" onClick={handleCloseModal} className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600">Cancelar</button>
