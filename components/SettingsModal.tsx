@@ -388,6 +388,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentU
                         if (paymentMethod === 'bank') payload.bankAccount = { bankName, accountType, idNumber, accountNumber };
                         else payload.cryptoWallet = { address: walletAddress, network: walletNetwork };
 
+                        setProfileLoading(true);
                         try {
                             const res = await onSaveProfile(payload);
                             if (res.success) {
@@ -400,6 +401,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentU
                         } catch (e) {
                             setError('Error actualizando el perfil.');
                             setTimeout(() => setError(''), 4000);
+                        } finally {
+                            setProfileLoading(false);
                         }
                     }} className={`px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors ${profileLoading ? 'opacity-60 cursor-not-allowed' : ''}`}>
                         {profileLoading ? 'Cargando...' : 'Guardar Perfil'}

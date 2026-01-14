@@ -859,6 +859,48 @@ const App: React.FC = () => {
         <SettingsModal
             isOpen={showSettings}
             onClose={() => setShowSettings(false)}
+            currentUser={currentUser}
+            onSaveProfile={async (payload) => {
+                const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
+                // If Firebase configured, update remote doc partially (preserves other fields)
+                if (firebaseConfigured) {
+                    try {
+                        // Fetch existing doc for safe merging of nested objects
+                        const existing = await Users.get(currentUser.id);
+                        const finalPayload: any = { ...payload };
+                        // Merge nested bankAccount / cryptoWallet if necessary
+                        if (existing?.bankAccount && payload.bankAccount) {
+                          finalPayload.bankAccount = { ...existing.bankAccount, ...payload.bankAccount };
+                        }
+                        if (existing?.cryptoWallet && payload.cryptoWallet) {
+                          finalPayload.cryptoWallet = { ...existing.cryptoWallet, ...payload.cryptoWallet };
+                        }
+
+                        // Apply a partial update with merged nested objects
+                        await Users.update(currentUser.id, finalPayload);
+
+                        // Update local state optimistically
+                        setUsers(prev => prev.map(u => u.id === currentUser.id ? { ...u, ...finalPayload } : u));
+                        if (currentUser.id === currentUser.id) {
+                            setCurrentUser(prev => prev ? ({ ...prev, ...finalPayload } as any) : prev);
+                        }
+                        showToast('Perfil actualizado en Firestore', 'info', 3000);
+                        return { success: true };
+                    } catch (err) {
+                        console.error('Error updating profile in Firestore:', err);
+                        showToast('Error actualizando perfil en Firestore', 'error', 5000);
+                        return { success: false, message: (err as any)?.message };
+                    }
+                }
+
+                // Local fallback: update users array
+                setUsers(prev => prev.map(u => u.id === currentUser.id ? { ...u, ...payload } : u));
+                if (currentUser.id === currentUser.id) {
+                    setCurrentUser(prev => prev ? ({ ...prev, ...payload } as any) : prev);
+                }
+                showToast('Perfil actualizado (local)', 'info', 3000);
+                return { success: true };
+            }}
             onUpdatePassword={handleUpdatePassword}
             onSendVerification={handleResendVerification}
         />
