@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { Raffle, Ticket, Commission, User, UserRole, TicketPack, Notification } from '../types';
 import { generateRaffleContent } from '../services/geminiService';
+import { Users } from '../services/firestore';
 import { SparklesIcon, PlusCircleIcon, TicketIcon, CurrencyDollarIcon, ClipboardListIcon, GiftIcon, DocumentChartBarIcon, UsersIcon, PencilIcon, XIcon, ShareIcon, TrophyIcon, InformationCircleIcon, MailIcon, PaperAirplaneIcon, BuildingStoreIcon, LockClosedIcon } from './icons';
 import ReportModal from './ReportModal';
 import LeaderboardsPage from './LeaderboardsPage';
@@ -635,16 +636,35 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
         cryptoWallet: { address: '', network: '' } as any | null,
     });
     const [profileSaving, setProfileSaving] = useState(false);
+    const [profileLoading, setProfileLoading] = useState(false);
 
-    const handleOpenProfile = (user: User) => {
-        setProfileUser(user);
-        setProfileForm({
-            country: user.country || '',
-            paymentMethod: user.bankAccount ? 'bank' : user.cryptoWallet ? 'crypto' : 'bank',
-            bankAccount: user.bankAccount ? ({ ...user.bankAccount }) : { bankName: '', accountType: 'ahorro', idNumber: '', accountNumber: '' },
-            cryptoWallet: user.cryptoWallet ? ({ ...user.cryptoWallet }) : { address: '', network: '' },
-        });
+    const handleOpenProfile = async (user: User) => {
         setIsProfileOpen(true);
+        setProfileLoading(true);
+        try {
+            const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
+            let freshUser: any = user;
+            if (firebaseConfigured) {
+                try {
+                    const doc = await Users.get(user.id);
+                    if (doc) {
+                        freshUser = { ...user, ...doc };
+                    }
+                } catch (err) {
+                    console.error('Error fetching user from Firestore:', err);
+                }
+            }
+
+            setProfileUser(freshUser);
+            setProfileForm({
+                country: freshUser?.country || '',
+                paymentMethod: freshUser?.bankAccount ? 'bank' : freshUser?.cryptoWallet ? 'crypto' : 'bank',
+                bankAccount: freshUser?.bankAccount ? ({ ...freshUser.bankAccount }) : { bankName: '', accountType: 'ahorro', idNumber: '', accountNumber: '' },
+                cryptoWallet: freshUser?.cryptoWallet ? ({ ...freshUser.cryptoWallet }) : { address: '', network: '' },
+            });
+        } finally {
+            setProfileLoading(false);
+        }
     };
 
     const handleCloseProfile = () => {
@@ -909,7 +929,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
                     <InformationCircleIcon className="h-6 w-6 text-indigo-400" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white">Perfil: {profileUser.name}</h3>
+                    <h3 className="text-xl font-bold text-white">Perfil: {profileUser.name}{profileLoading && <span className="ml-3 text-sm text-gray-400">Cargando…</span>}</h3>
                     <p className="text-sm text-gray-400">{profileUser.email}</p>
                   </div>
                 </div>
