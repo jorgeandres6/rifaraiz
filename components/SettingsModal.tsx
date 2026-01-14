@@ -20,6 +20,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentU
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [sendingVerification, setSendingVerification] = useState(false);
+  const [activeTab, setActiveTab] = useState<'password' | 'profile'>('password');
 
   // Profile fields
   const [name, setName] = useState(currentUser?.name || '');
@@ -155,8 +156,22 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentU
             </button>
         </div>
         
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-             <h4 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-2 border-b border-gray-700 pb-2">Cambiar Contraseña</h4>
+        {/* Tabs navigation */}
+        <div className="p-4 border-b border-gray-700 bg-gray-800">
+          <div className="flex gap-2">
+            <button type="button" onClick={() => { setError(''); setSuccess(''); setActiveTab('password'); }} className={`px-3 py-2 text-sm rounded-md ${activeTab === 'password' ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-700'}`}>
+              Contraseña
+            </button>
+            <button type="button" onClick={() => { setError(''); setSuccess(''); setActiveTab('profile'); }} className={`px-3 py-2 text-sm rounded-md ${activeTab === 'profile' ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-700'}`}>
+              Perfil
+            </button>
+          </div>
+        </div>
+
+        {/* Password tab */}
+        {activeTab === 'password' && (
+          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+             <h4 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-2">Cambiar Contraseña</h4>
              
              <div>
                 <label htmlFor="currentPass" className="block text-sm font-medium text-gray-300">Contraseña Actual</label>
@@ -266,8 +281,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentU
                 </div>
             </div>
         </form>
+        )}
 
-        {/* Profile edit section */}
+        {/* Profile tab */}
+        {activeTab === 'profile' && (
         <div className="p-6 border-t border-gray-700">
             <h4 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-2">Perfil</h4>
             <div className="space-y-3">
@@ -390,6 +407,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentU
                 </div>
             </div>
         </div>
+        )}
       </div>
     </div>
   );
