@@ -33,9 +33,34 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // Commissions: only admins can access
+    // Commissions: users can read their own commissions; non-admin purchases may create commission documents for their upline;
+    // only admins can update/delete or modify immutable fields.
     match /commissions/{docId} {
-      allow read, write: if isAdmin();
+      // Create: allowed by admin OR by the sourceUser (the purchaser) under strict constraints
+      allow create: if request.auth != null && (
+        isAdmin() || (
+          request.resource.data.sourceUserId == request.auth.uid
+          && request.resource.data.userId is string
+          && request.resource.data.amount is number
+          && request.resource.data.amount >= 0
+          && request.resource.data.level is int
+          && request.resource.data.level >= 1
+          && request.resource.data.level <= 3
+          && request.resource.data.status == 'pending'
+        )
+      );
+
+      // Read: admins can read all; users can read only their own
+      allow read: if request.auth != null && (isAdmin() || request.auth.uid == resource.data.userId);
+
+      // Update: only admins can update, and they must not change immutable fields like amount/userId/sourceUserId
+      allow update: if isAdmin()
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.sourceUserId == resource.data.sourceUserId
+        && request.resource.data.amount == resource.data.amount;
+
+      // Delete: only admins
+      allow delete: if isAdmin();
     }
 
     // Default: deny

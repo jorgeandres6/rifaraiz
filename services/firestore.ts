@@ -139,6 +139,37 @@ export const Tickets = {
   listen: (onChange: (items: Array<Ticket & { id: string }>) => void, constraints?: QueryConstraint[]) => listenCollection<Ticket>("tickets", onChange, constraints),
 };
 
+// --- Commissions helpers ---
+export type Commission = {
+  userId: string;
+  amount: number;
+  status?: string;
+  level?: number;
+  sourceUserId?: string;
+  raffleId?: string;
+  date?: any;
+  [k: string]: any;
+};
+
+export const Commissions = {
+  getAll: (constraints?: QueryConstraint[]) => getCollection<Commission>("commissions", constraints as any),
+  listen: (onChange: (items: Array<Commission & { id: string }>) => void, constraints?: QueryConstraint[]) => listenCollection<Commission>("commissions", onChange, constraints),
+  add: (data: Partial<Commission>) => {
+    const prepared = sanitizeForFirestore({ ...data, date: serverTimestamp() });
+    return addDocument<Commission>("commissions", prepared as Commission);
+  },
+  addBatch: async (comms: Partial<Commission>[]) => {
+    const batch = writeBatch(db);
+    comms.forEach(c => {
+      const docRef = doc(collection(db, "commissions"));
+      const prepared = sanitizeForFirestore({ ...c, date: serverTimestamp() });
+      batch.set(docRef, prepared);
+    });
+    await batch.commit();
+  },
+  update: (id: string, partial: Partial<Commission>) => updateDocument("commissions", id, partial),
+};
+
 // Re-export serverTimestamp for callers that want to use it
 export { serverTimestamp };
 

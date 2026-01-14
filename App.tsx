@@ -9,7 +9,7 @@ import SettingsModal from './components/SettingsModal';
 import Toasts, { Toast } from './components/Toasts';
 
 // Firestore helpers
-import { Raffles, Tickets, setDocument, serverTimestamp } from './services/firestore';
+import { Raffles, Tickets, Commissions, setDocument, serverTimestamp } from './services/firestore';
 
 const App: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -33,42 +33,49 @@ const App: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [usersRes, rafflesRes, ticketsRes, commissionsRes] = await Promise.all([
-          fetch('/data/users.json'),
-          fetch('/data/raffles.json'),
-          fetch('/data/tickets.json'),
-          fetch('/data/commissions.json'),
-        ]);
+        const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
 
-        if (!usersRes.ok || !rafflesRes.ok || !ticketsRes.ok || !commissionsRes.ok) {
+        const usersRes = await fetch('/data/users.json');
+        const rafflesRes = await fetch('/data/raffles.json');
+        const ticketsRes = await fetch('/data/tickets.json');
+        let commissionsRes: Response | null = null;
+        if (!firebaseConfigured) {
+          commissionsRes = await fetch('/data/commissions.json');
+        }
+
+        if (!usersRes.ok || !rafflesRes.ok || !ticketsRes.ok || (commissionsRes && !commissionsRes.ok)) {
           throw new Error('La respuesta de la red no fue correcta');
         }
 
         const usersData: User[] = await usersRes.json();
         const rafflesData: Raffle[] = await rafflesRes.json();
         const ticketsData: any[] = await ticketsRes.json();
-        const commissionsData: any[] = await commissionsRes.json();
 
         const parsedTickets: Ticket[] = ticketsData.map(ticket => ({
           ...ticket,
           purchaseDate: new Date(ticket.purchaseDate),
         }));
-        const parsedCommissions: Commission[] = commissionsData.map(c => ({
-            ...c,
-            date: new Date(c.date)
-        }));
 
         setUsers(usersData);
         setRaffles(rafflesData);
         setTickets(parsedTickets);
-        setCommissions(parsedCommissions);
+
+        // If Firebase is NOT configured, load commissions from local JSON. Otherwise Firestore listeners will populate them.
+        if (!firebaseConfigured && commissionsRes) {
+          const commissionsData: any[] = await commissionsRes.json();
+          const parsedCommissions: Commission[] = commissionsData.map(c => ({
+              ...c,
+              date: new Date(c.date)
+          }));
+          setCommissions(parsedCommissions);
+        }
         
       } catch (error) {
         console.error("No se pudieron obtener los datos de simulación:", error);
       } finally {
         setIsLoading(false);
       }
-    };
+    }; 
 
     fetchData();
   }, []);
@@ -100,6 +107,7 @@ const App: React.FC = () => {
 
     let rafflesUnsub: (() => void) | null = null;
     let ticketsUnsub: (() => void) | null = null;
+    let commissionsUnsub: (() => void) | null = null;
 
     try {
       rafflesUnsub = Raffles.listen((items: any[]) => {
@@ -119,6 +127,14 @@ const App: React.FC = () => {
         setTickets(parsed as any);
       });
 
+      commissionsUnsub = Commissions.listen((items: any[]) => {
+        const parsed = items.map((c: any) => ({
+          ...c,
+          date: c.date && typeof c.date === 'object' && typeof c.date.toDate === 'function' ? c.date.toDate() : c.date,
+        }));
+        setCommissions(parsed);
+      });
+
       console.log('Firestore listeners initialized');
     } catch (err) {
       console.error('Error initializing Firestore listeners:', err);
@@ -128,6 +144,7 @@ const App: React.FC = () => {
     return () => {
       if (rafflesUnsub) rafflesUnsub();
       if (ticketsUnsub) ticketsUnsub();
+      if (commissionsUnsub) commissionsUnsub();
     };
   }, []);
 
@@ -491,6 +508,25 @@ const App: React.FC = () => {
 
     if (newCommissions.length > 0) {
         setCommissions(prev => [...prev, ...newCommissions]);
+
+        const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
+        if (firebaseConfigured) {
+          try {
+            const commsForDb = newCommissions.map(c => ({
+              userId: c.userId,
+              amount: c.amount,
+              status: c.status,
+              level: c.level,
+              sourceUserId: c.sourceUserId,
+              raffleId: c.raffleId,
+              date: serverTimestamp(),
+            }));
+            await Commissions.addBatch(commsForDb);
+          } catch (err) {
+            console.error('Error saving commissions to Firestore:', err);
+            showToast('Error guardando comisiones en Firestore. Revisa la consola para más detalles.', 'error');
+          }
+        }
     }
 
     // Trigger roulette if the raffle has extra prizes
