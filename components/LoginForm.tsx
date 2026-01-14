@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { MailIcon, LockClosedIcon } from './icons';
+const googleGUrl = new URL('../src/img/google-g.png', import.meta.url).href;
 
 interface LoginFormProps {
     onLogin: (email: string, pass: string) => Promise<{ success: boolean; message?: string }>;
@@ -110,7 +111,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onGoogle, toggleView, on
             <div className="space-y-3">
                 <button type="button" onClick={handleGoogle} disabled={googleLoading} className={`w-full flex items-center justify-center gap-3 py-2 px-4 border border-gray-600 rounded-md text-sm font-medium text-white ${googleLoading ? 'bg-gray-700 cursor-wait' : 'bg-white/6 hover:bg-white/10'}`}>
                     {/* Use the provided Google "G" image placed at `public/img/google-g.png` */}
-                    <img src="/img/google-g.png" alt="Google" className="h-5 w-5 object-contain" />
+                    <img src={googleGUrl} alt="Google" className="h-5 w-5 object-contain" />
                     <span>{googleLoading ? 'Iniciando con Google...' : 'Continuar con Google'}</span>
                 </button>
 
