@@ -45,9 +45,11 @@ const Commissions: React.FC<CommissionsProps> = ({ commissions, users, currentUs
         const uniquePacksInRaffle = myBonusPackTickets
             .filter(t => t.raffleId === raffleId)
             .reduce((acc, ticket) => {
-                const key = `${ticket.purchasedPackInfo!.quantity}_${ticket.purchasedPackInfo!.price}`;
+                // Use price normalized to 2 decimals for stable keys
+                const priceNormalized = Math.round((ticket.purchasedPackInfo!.price) * 100) / 100;
+                const key = `${ticket.purchasedPackInfo!.quantity}_${priceNormalized}`;
                 if (!acc.has(key)) {
-                    acc.set(key, ticket.purchasedPackInfo!);
+                    acc.set(key, { ...ticket.purchasedPackInfo!, price: priceNormalized });
                 }
                 return acc;
             }, new Map<string, Exclude<Ticket['purchasedPackInfo'], undefined>>());
@@ -60,7 +62,7 @@ const Commissions: React.FC<CommissionsProps> = ({ commissions, users, currentUs
             const allPackTickets = tickets.filter(
                 t => t.raffleId === raffleId &&
                       t.purchasedPackInfo?.quantity === pack.quantity &&
-                      t.purchasedPackInfo?.price === pack.price
+                      t.purchasedPackInfo?.price !== undefined && Math.abs((t.purchasedPackInfo!.price) - pack.price) < 0.005
             );
 
             const uniqueBuyers = [...new Set(allPackTickets.map(t => t.originalUserId))];

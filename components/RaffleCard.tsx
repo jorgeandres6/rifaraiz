@@ -150,10 +150,7 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle, onPurchase, hasActiveTi
         <div className="mt-4 space-y-3 text-sm">
            <div className="flex items-center text-gray-300">
             <CurrencyDollarIcon className="h-5 w-5 mr-2 text-indigo-400" />
-            <span>Precio: ${raffle.ticketPrice} / boleto</span>
-          </div>
-
-          <div className="pt-2">
+            <span>Precio: ${raffle.ticketPrice.toFixed(2)} / boleto</span>
             <div className="flex justify-between mb-1 text-gray-300 font-medium">
                 <span>Meta para la rifa</span>
                 <span>${displayedCurrentSales.toLocaleString()} / ${publicGoalAmount.toLocaleString()}</span>
@@ -189,14 +186,14 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle, onPurchase, hasActiveTi
               1 Boleto por ${raffle.ticketPrice}
             </option>
             {raffle.ticketPacks?.map((pack, index) => {
-              const savings = (raffle.ticketPrice * pack.quantity) - pack.price;
+              const savings = Math.round(((raffle.ticketPrice * pack.quantity) - pack.price) * 100) / 100;
               const bonusText = pack.participationBonusPercent && pack.participationBonusPercent > 0
                 ? ` (+${pack.participationBonusPercent}% Participación Global)`
                 : '';
               const fidelityText = pack.isFidelityPack ? ' - 🎟️ + Acceso Fidelity' : '';
               return (
                 <option key={index} value={`${pack.quantity}_${pack.price}`}>
-                  {pack.quantity} Boletos por ${pack.price} {savings > 0 ? `(Ahorra $${savings})` : ''}{bonusText}{fidelityText}
+                  {pack.quantity} Boletos por ${pack.price.toFixed(2)} {savings > 0 ? `(Ahorra $${savings.toFixed(2)})` : ''}{bonusText}{fidelityText}
                 </option>
               );
             })}

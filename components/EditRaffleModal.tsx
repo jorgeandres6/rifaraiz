@@ -55,7 +55,8 @@ const EditRaffleModal: React.FC<EditRaffleModalProps> = ({ raffle, onClose, onUp
     const handlePackChange = (index: number, field: keyof PackState, value: string) => {
         const newPacks = [...packs];
         if (field === 'isFidelityPack') return; // Handled by separate toggle
-        if (/^\d*\.?\d*$/.test(value)) {
+        // Allow numbers with up to 2 decimal places
+        if (/^\d*(\.\d{0,2})?$/.test(value)) {
             // @ts-ignore
             newPacks[index][field] = value;
             setPacks(newPacks);
@@ -135,7 +136,8 @@ const EditRaffleModal: React.FC<EditRaffleModalProps> = ({ raffle, onClose, onUp
             .filter(p => p.quantity && p.price)
             .map(p => ({
                 quantity: Number(p.quantity),
-                price: Number(p.price),
+                // Round to 2 decimals to avoid floating point issues
+                price: Math.round(Number(p.price) * 100) / 100,
                 ...(p.participationBonusPercent && { participationBonusPercent: Number(p.participationBonusPercent) }),
                 isFidelityPack: p.isFidelityPack
             }));
@@ -199,7 +201,7 @@ const EditRaffleModal: React.FC<EditRaffleModalProps> = ({ raffle, onClose, onUp
                                     </div>
                                     <div>
                                         <label htmlFor="ticketPrice" className="block text-sm font-medium text-gray-300">Precio Boleto ($)</label>
-                                        <input type="number" name="ticketPrice" value={formData.ticketPrice} onChange={handleFormChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2" min="1" />
+                                        <input type="number" name="ticketPrice" step="0.01" value={formData.ticketPrice} onChange={handleFormChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2" min="0.01" />
                                     </div>
                                     <div>
                                         <label htmlFor="salesGoal" className="block text-sm font-medium text-gray-300">Meta Ventas ($)</label>
@@ -224,7 +226,7 @@ const EditRaffleModal: React.FC<EditRaffleModalProps> = ({ raffle, onClose, onUp
                                                 <div className="flex items-center gap-2 flex-grow">
                                                     <input type="text" placeholder="Cantidad" value={pack.quantity} onChange={(e) => handlePackChange(index, 'quantity', e.target.value)} className="w-full md:w-20 bg-gray-800 border border-gray-600 rounded-md p-2" />
                                                     <span className="text-gray-400">por $</span>
-                                                    <input type="text" placeholder="Precio" value={pack.price} onChange={(e) => handlePackChange(index, 'price', e.target.value)} className="w-full md:w-24 bg-gray-800 border border-gray-600 rounded-md p-2" />
+                                                    <input type="number" step="0.01" min="0.01" placeholder="Precio" value={pack.price} onChange={(e) => handlePackChange(index, 'price', e.target.value)} className="w-full md:w-24 bg-gray-800 border border-gray-600 rounded-md p-2" />
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-gray-400">Bonus:</span>

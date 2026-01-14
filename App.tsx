@@ -415,7 +415,7 @@ const App: React.FC = () => {
       return;
     }
 
-    const purchasedPackInfo = raffle.ticketPacks?.find(p => p.quantity === amount && p.price === totalCost);
+    const purchasedPackInfo = raffle.ticketPacks?.find(p => p.quantity === amount && Math.abs(p.price - totalCost) < 0.005); // match floats with tolerance (2 decimals)
 
     const newTickets: Ticket[] = [];
     const purchaseDate = new Date();

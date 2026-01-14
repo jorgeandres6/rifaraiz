@@ -33,7 +33,8 @@ const CreateRaffleForm: React.FC<{ onAddRaffle: AdminPanelProps['onAddRaffle'] }
 
     const handlePackChange = (index: number, field: 'quantity' | 'price' | 'participationBonusPercent', value: string) => {
         const newPacks = [...packs];
-        if (/^\d*\.?\d*$/.test(value)) { // Allow only numeric input
+        // Allow only numbers with up to 2 decimal places
+        if (/^\d*(\.\d{0,2})?$/.test(value)) {
             newPacks[index][field] = value;
             setPacks(newPacks);
         }
@@ -83,7 +84,8 @@ const CreateRaffleForm: React.FC<{ onAddRaffle: AdminPanelProps['onAddRaffle'] }
             .map(p => {
                 const newPack: TicketPack = {
                     quantity: Number(p.quantity),
-                    price: Number(p.price),
+                    // Round to 2 decimals
+                    price: Math.round(Number(p.price) * 100) / 100,
                     isFidelityPack: p.isFidelityPack
                 };
                 if (p.participationBonusPercent && Number(p.participationBonusPercent) > 0) {
@@ -96,7 +98,7 @@ const CreateRaffleForm: React.FC<{ onAddRaffle: AdminPanelProps['onAddRaffle'] }
             title,
             description,
             prizeInfo,
-            ticketPrice: Number(ticketPrice),
+            ticketPrice: Math.round(Number(ticketPrice) * 100) / 100,
             salesGoal: Number(salesGoal),
             goalThresholdPercent: Number(goalThresholdPercent),
             ticketPacks,
@@ -154,7 +156,7 @@ const CreateRaffleForm: React.FC<{ onAddRaffle: AdminPanelProps['onAddRaffle'] }
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                     <label htmlFor="ticketPrice" className="block text-sm font-medium text-gray-300">Precio del Boleto ($)</label>
-                    <input type="number" id="ticketPrice" value={ticketPrice} onChange={(e) => setTicketPrice(Number(e.target.value))} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" min="1" />
+                    <input type="number" id="ticketPrice" step="0.01" value={ticketPrice} onChange={(e) => setTicketPrice(Number(e.target.value))} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" min="0.01" />
                 </div>
                 <div>
                     <label htmlFor="salesGoal" className="block text-sm font-medium text-gray-300">Meta de Ventas ($)</label>
