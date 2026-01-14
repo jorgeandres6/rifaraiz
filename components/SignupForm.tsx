@@ -16,7 +16,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSignup, toggleView, initialRe
     const [city, setCity] = useState('');
     const [referralCode, setReferralCode] = useState(initialReferral || '');
     const [country, setCountry] = useState('');
-    const [paymentMethod, setPaymentMethod] = useState<'none' | 'bank' | 'crypto'>('none');
+    const [paymentMethod, setPaymentMethod] = useState<'bank' | 'crypto'>('bank');
 
     // Bank fields
     const [bankName, setBankName] = useState('');
@@ -43,6 +43,12 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSignup, toggleView, initialRe
             setError('La contraseña debe tener al menos 6 caracteres.');
             return;
         }
+        // Require a payment method
+        if (paymentMethod !== 'bank' && paymentMethod !== 'crypto') {
+            setError('Por favor selecciona un método de pago.');
+            return;
+        }
+
         // Validate payment fields depending on method
         if (paymentMethod === 'bank') {
             if (!bankName || !idNumber || !accountNumber) {
@@ -119,23 +125,19 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSignup, toggleView, initialRe
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                           <MapPinIcon className="h-5 w-5 text-gray-400" />
                       </div>
-                      <input type="text" id="city-signup" value={city} onChange={(e) => setCity(e.target.value)} required className="block w-full bg-gray-900 border border-gray-600 rounded-md p-3 pl-10 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Bogotá" />
+                      <input type="text" id="city-signup" value={city} onChange={(e) => setCity(e.target.value)} required className="block w-full bg-gray-900 border border-gray-600 rounded-md p-3 pl-10 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Quito" />
                   </div>
               </div>
             </div>
 
             <div>
                 <label htmlFor="country-signup" className="block text-sm font-medium text-gray-300">País</label>
-                <input type="text" id="country-signup" value={country} onChange={(e) => setCountry(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-3 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Colombia" />
+                <input type="text" id="country-signup" value={country} onChange={(e) => setCountry(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-3 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Ecuador" />
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-300">Método de Pago (Opcional)</label>
+                <label className="block text-sm font-medium text-gray-300">Método de Pago</label>
                 <div className="mt-1 flex gap-4 items-center">
-                    <label className="inline-flex items-center gap-2">
-                        <input type="radio" name="payment" checked={paymentMethod === 'none'} onChange={() => setPaymentMethod('none')} />
-                        <span className="text-sm text-gray-300">Ninguno</span>
-                    </label>
                     <label className="inline-flex items-center gap-2">
                         <input type="radio" name="payment" checked={paymentMethod === 'bank'} onChange={() => setPaymentMethod('bank')} />
                         <span className="text-sm text-gray-300">Cuenta Bancaria</span>
