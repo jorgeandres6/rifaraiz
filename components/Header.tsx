@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import iconoRR from '../src/img/iconoRR.png';
 import { User } from '../types';
-import { UserCircleIcon, ChevronDownIcon, BellIcon, Cog6ToothIcon } from './icons';
+import { UserCircleIcon, ChevronDownIcon, BellIcon, Cog6ToothIcon, ShareIcon } from './icons';
 
 interface HeaderProps {
   currentUser: User;
@@ -16,6 +16,33 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ currentUser, allUsers, switchUser, onLogout, onOpenNotifications, hasUnreadNotifications, onOpenSettings }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyReferral = async () => {
+    try {
+      const code = currentUser?.referralCode || '';
+      const url = `${window.location.origin}/?ref=${encodeURIComponent(code)}`;
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      // Fallback: create a temporary input to copy
+      try {
+        const code = currentUser?.referralCode || '';
+        const url = `${window.location.origin}/?ref=${encodeURIComponent(code)}`;
+        const tmp = document.createElement('input');
+        tmp.value = url;
+        document.body.appendChild(tmp);
+        tmp.select();
+        document.execCommand('copy');
+        document.body.removeChild(tmp);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (e) {
+        // ignore
+      }
+    }
+  };
 
   return (
     <header className="bg-gray-900/80 backdrop-blur-sm sticky top-0 z-50 border-b border-gray-700">
@@ -25,6 +52,16 @@ const Header: React.FC<HeaderProps> = ({ currentUser, allUsers, switchUser, onLo
             <img src={iconoRR} alt="RifaRaiz Logo" className="h-10 w-auto" />
           </div>
           <div className="flex items-center gap-4">
+             {/* Referral code + copy button */}
+             {currentUser?.referralCode && (
+               <button onClick={handleCopyReferral} title="Copiar enlace de referido" className="flex items-center gap-2 rounded-md bg-gray-800 px-3 py-1 text-sm text-gray-300 hover:bg-gray-700 transition">
+                 <ShareIcon className="h-4 w-4" />
+                 <span className="font-mono hidden sm:inline">{currentUser.referralCode}</span>
+                 <span className="sm:hidden text-xs">Ref</span>
+                 {copied && <span className="ml-2 text-xs text-green-400">¡Copiado!</span>}
+               </button>
+             )}
+
              {/* Notification Button */}
              <button 
                 onClick={onOpenNotifications}
