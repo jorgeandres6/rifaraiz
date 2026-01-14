@@ -625,6 +625,75 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
     const [messageBody, setMessageBody] = useState('');
     const [messageStatus, setMessageStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
 
+    // Profile Modal State (Admin view/edit)
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [profileUser, setProfileUser] = useState<User | null>(null);
+    const [profileForm, setProfileForm] = useState({
+        country: '',
+        paymentMethod: 'bank' as 'bank' | 'crypto',
+        bankAccount: { bankName: '', accountType: 'ahorro' as 'ahorro' | 'corriente', idNumber: '', accountNumber: '' } as any | null,
+        cryptoWallet: { address: '', network: '' } as any | null,
+    });
+    const [profileSaving, setProfileSaving] = useState(false);
+
+    const handleOpenProfile = (user: User) => {
+        setProfileUser(user);
+        setProfileForm({
+            country: user.country || '',
+            paymentMethod: user.bankAccount ? 'bank' : user.cryptoWallet ? 'crypto' : 'bank',
+            bankAccount: user.bankAccount ? ({ ...user.bankAccount }) : { bankName: '', accountType: 'ahorro', idNumber: '', accountNumber: '' },
+            cryptoWallet: user.cryptoWallet ? ({ ...user.cryptoWallet }) : { address: '', network: '' },
+        });
+        setIsProfileOpen(true);
+    };
+
+    const handleCloseProfile = () => {
+        setIsProfileOpen(false);
+        setProfileUser(null);
+        setProfileForm({ country: '', paymentMethod: 'bank', bankAccount: { bankName: '', accountType: 'ahorro', idNumber: '', accountNumber: '' }, cryptoWallet: { address: '', network: '' } });
+        setProfileSaving(false);
+    };
+
+    const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        if (name.startsWith('bank.')) {
+            const field = name.split('.')[1];
+            setProfileForm(prev => ({ ...prev, bankAccount: { ...prev.bankAccount!, [field]: value } }));
+        } else if (name.startsWith('crypto.')) {
+            const field = name.split('.')[1];
+            setProfileForm(prev => ({ ...prev, cryptoWallet: { ...prev.cryptoWallet!, [field]: value } }));
+        } else {
+            setProfileForm(prev => ({ ...prev, [name]: value }));
+        }
+    };
+
+    const handleProfileSave = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        if (!profileUser) return;
+        setProfileSaving(true);
+        try {
+            const updatedUser: User = { ...profileUser } as any;
+            // Merge nested objects
+            if (profileForm.paymentMethod === 'bank') {
+                updatedUser.bankAccount = { ...profileUser.bankAccount, ...profileForm.bankAccount } as any;
+                updatedUser.cryptoWallet = undefined;
+            } else {
+                updatedUser.cryptoWallet = { ...profileUser.cryptoWallet, ...profileForm.cryptoWallet } as any;
+                updatedUser.bankAccount = undefined;
+            }
+            updatedUser.country = profileForm.country || undefined;
+            // Call parent updater
+            onUpdateUser(updatedUser);
+            setTimeout(() => {
+                setProfileSaving(false);
+                handleCloseProfile();
+            }, 400);
+        } catch (err) {
+            console.error('Error saving profile:', err);
+            setProfileSaving(false);
+        }
+    };
+
     const handleEditClick = (user: User) => {
       setEditingUser(user);
       setFormData({ name: user.name, email: user.email, role: user.role });
@@ -756,6 +825,13 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
                   </td>
                   <td className="px-6 py-4 font-mono">{user.referralCode}</td>
                   <td className="px-6 py-4 text-right flex justify-end space-x-2">
+                    <button
+                        onClick={() => handleOpenProfile(user)}
+                        className="p-1 text-green-400 hover:text-green-300"
+                        title="Ver Perfil"
+                    >
+                        <InformationCircleIcon className="h-5 w-5" />
+                    </button>
                     <button 
                         onClick={() => handleResetPassword(user)} 
                         className="p-1 text-yellow-500 hover:text-yellow-400"
@@ -814,6 +890,98 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
                 <div className="mt-6 flex justify-end space-x-3">
                   <button type="button" onClick={handleCloseModal} className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600">Cancelar</button>
                   <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">Guardar Cambios</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Profile Modal */}
+        {isProfileOpen && profileUser && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl relative animate-fade-in">
+              <button onClick={handleCloseProfile} className="absolute top-3 right-3 text-gray-400 hover:text-white">
+                <XIcon className="h-6 w-6" />
+              </button>
+              <form onSubmit={handleProfileSave} className="p-6">
+                <div className="flex items-center mb-4">
+                  <div className="p-2 bg-indigo-500/20 rounded-full mr-3">
+                    <InformationCircleIcon className="h-6 w-6 text-indigo-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white">Perfil: {profileUser.name}</h3>
+                    <p className="text-sm text-gray-400">{profileUser.email}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300">País</label>
+                    <input name="country" value={profileForm.country} onChange={handleProfileChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300">Código Referido</label>
+                    <div className="mt-1 font-mono text-gray-300">{profileUser.referralCode}</div>
+                  </div>
+
+                  <div className="col-span-1 md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-300">Método de Pago</label>
+                    <div className="mt-1 flex items-center space-x-4">
+                      <label className={`cursor-pointer text-sm ${profileForm.paymentMethod==='bank' ? 'text-white' : 'text-gray-300'}`}>
+                        <input type="radio" name="paymentMethod" value="bank" checked={profileForm.paymentMethod==='bank'} onChange={handleProfileChange} className="mr-2" />
+                        Banco
+                      </label>
+                      <label className={`cursor-pointer text-sm ${profileForm.paymentMethod==='crypto' ? 'text-white' : 'text-gray-300'}`}>
+                        <input type="radio" name="paymentMethod" value="crypto" checked={profileForm.paymentMethod==='crypto'} onChange={handleProfileChange} className="mr-2" />
+                        Crypto
+                      </label>
+                    </div>
+                  </div>
+
+                  {profileForm.paymentMethod === 'bank' && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300">Banco</label>
+                        <input name="bank.bankName" value={profileForm.bankAccount?.bankName || ''} onChange={handleProfileChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300">Tipo de Cuenta</label>
+                        <select name="bank.accountType" value={profileForm.bankAccount?.accountType || 'ahorro'} onChange={handleProfileChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2">
+                          <option value="ahorro">Ahorro</option>
+                          <option value="corriente">Corriente</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300">ID (Cédula/RUC)</label>
+                        <input name="bank.idNumber" value={profileForm.bankAccount?.idNumber || ''} onChange={handleProfileChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300">Número de Cuenta</label>
+                        <input name="bank.accountNumber" value={profileForm.bankAccount?.accountNumber || ''} onChange={handleProfileChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2" />
+                      </div>
+                    </>
+                  )}
+
+                  {profileForm.paymentMethod === 'crypto' && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300">Dirección</label>
+                        <input name="crypto.address" value={profileForm.cryptoWallet?.address || ''} onChange={handleProfileChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300">Red</label>
+                        <input name="crypto.network" value={profileForm.cryptoWallet?.network || ''} onChange={handleProfileChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2" />
+                      </div>
+                    </>
+                  )}
+
+                </div>
+
+                <div className="mt-6 flex justify-end space-x-3">
+                  <button type="button" onClick={handleCloseProfile} className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600">Cancelar</button>
+                  <button type="submit" disabled={profileSaving} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">
+                    {profileSaving ? 'Guardando...' : 'Guardar Perfil'}
+                  </button>
                 </div>
               </form>
             </div>
