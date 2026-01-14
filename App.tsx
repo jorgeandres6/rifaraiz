@@ -251,7 +251,7 @@ const App: React.FC = () => {
     }
 
     // Fallback: local users JSON auth
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const user = users.find(u => (u.email || '').toLowerCase() === (email || '').toLowerCase());
 
     if (!user) {
         return { success: false, message: "Credenciales inválidas. Por favor, inténtalo de nuevo." };
@@ -365,7 +365,7 @@ const App: React.FC = () => {
       }
     }
 
-    if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+    if (users.some(u => (u.email || '').toLowerCase() === (email || '').toLowerCase())) {
       return { success: false, message: "El correo electrónico ya está en uso." };
     }
     
@@ -718,7 +718,7 @@ const App: React.FC = () => {
         return { success: false, message: 'Error buscando usuario. Intenta de nuevo.' };
       }
     } else {
-      recipient = users.find(u => u.email.toLowerCase() === recipientEmail.toLowerCase());
+      recipient = users.find(u => (u.email || '').toLowerCase() === (recipientEmail || '').toLowerCase());
       if (!recipient) {
         return { success: false, message: "Usuario no registrado. Verifica el correo electrónico." };
       }
