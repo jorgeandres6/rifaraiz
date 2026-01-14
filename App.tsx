@@ -35,8 +35,6 @@ const App: React.FC = () => {
       try {
         const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
 
-            const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
-
         let usersRes: Response | null = null;
         if (!firebaseConfigured) {
           usersRes = await fetch('/data/users.json');
