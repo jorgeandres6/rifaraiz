@@ -40,12 +40,22 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentU
   const [profileLoading, setProfileLoading] = useState(false);
 
   useEffect(() => {
+    // Only load/reset when modal opens and we have a current user
+    if (!isOpen || !currentUser) return;
+
+    // Reset transient password/error state when opening
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setError('');
+    setSuccess('');
+
     // Try to fetch the canonical user profile from Firestore when available
     let mounted = true;
     const fetchProfile = async () => {
       setProfileLoading(true);
       try {
-        if (currentUser && import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID) {
+        if (import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID) {
           const doc = await Users.get(currentUser.id);
           if (mounted && doc) {
             setName(doc.name || '');
@@ -59,6 +69,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentU
             setAccountNumber(doc.bankAccount?.accountNumber || '');
             setWalletAddress(doc.cryptoWallet?.address || '');
             setWalletNetwork(doc.cryptoWallet?.network || '');
+          } else if (mounted) {
+            // If doc not found, fallback to currentUser prop
+            setName(currentUser?.name || '');
+            setPhone(currentUser?.phone || '');
+            setCity(currentUser?.city || '');
+            setCountry(currentUser?.country || '');
+            setPaymentMethod(currentUser?.bankAccount ? 'bank' : (currentUser?.cryptoWallet ? 'crypto' : 'bank'));
+            setBankName(currentUser?.bankAccount?.bankName || '');
+            setAccountType(currentUser?.bankAccount?.accountType || 'ahorro');
+            setIdNumber(currentUser?.bankAccount?.idNumber || '');
+            setAccountNumber(currentUser?.bankAccount?.accountNumber || '');
+            setWalletAddress(currentUser?.cryptoWallet?.address || '');
+            setWalletNetwork(currentUser?.cryptoWallet?.network || '');
           }
         } else {
           // Fallback to currentUser prop
@@ -77,17 +100,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentU
       } catch (e) {
         console.error('Error fetching profile from Firestore:', e);
         // keep currentUser-based values as fallback
-        setName(currentUser?.name || '');
-        setPhone(currentUser?.phone || '');
-        setCity(currentUser?.city || '');
-        setCountry(currentUser?.country || '');
-        setPaymentMethod(currentUser?.bankAccount ? 'bank' : (currentUser?.cryptoWallet ? 'crypto' : 'bank'));
-        setBankName(currentUser?.bankAccount?.bankName || '');
-        setAccountType(currentUser?.bankAccount?.accountType || 'ahorro');
-        setIdNumber(currentUser?.bankAccount?.idNumber || '');
-        setAccountNumber(currentUser?.bankAccount?.accountNumber || '');
-        setWalletAddress(currentUser?.cryptoWallet?.address || '');
-        setWalletNetwork(currentUser?.cryptoWallet?.network || '');
+        if (mounted) {
+          setName(currentUser?.name || '');
+          setPhone(currentUser?.phone || '');
+          setCity(currentUser?.city || '');
+          setCountry(currentUser?.country || '');
+          setPaymentMethod(currentUser?.bankAccount ? 'bank' : (currentUser?.cryptoWallet ? 'crypto' : 'bank'));
+          setBankName(currentUser?.bankAccount?.bankName || '');
+          setAccountType(currentUser?.bankAccount?.accountType || 'ahorro');
+          setIdNumber(currentUser?.bankAccount?.idNumber || '');
+          setAccountNumber(currentUser?.bankAccount?.accountNumber || '');
+          setWalletAddress(currentUser?.cryptoWallet?.address || '');
+          setWalletNetwork(currentUser?.cryptoWallet?.network || '');
+        }
       } finally {
         if (mounted) setProfileLoading(false);
       }
@@ -95,7 +120,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentU
 
     fetchProfile();
     return () => { mounted = false; };
-  }, [currentUser]);
+  }, [currentUser, isOpen]);
 
   if (!isOpen) return null;
 
