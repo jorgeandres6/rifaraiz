@@ -4,17 +4,23 @@ import { MailIcon, LockClosedIcon, UserCircleIcon, PhoneIcon, MapPinIcon } from 
 interface SignupFormProps {
     onSignup: (name: string, email: string, pass: string, phone: string, city: string, referralCode?: string) => Promise<{ success: boolean; message?: string }>;
     toggleView: () => void;
+    initialReferral?: string;
 }
 
-const SignupForm: React.FC<SignupFormProps> = ({ onSignup, toggleView }) => {
+const SignupForm: React.FC<SignupFormProps> = ({ onSignup, toggleView, initialReferral }) => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [phone, setPhone] = useState('');
     const [city, setCity] = useState('');
-    const [referralCode, setReferralCode] = useState('');
+    const [referralCode, setReferralCode] = useState(initialReferral || '');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+
+    // Prefill referral if provided via deeplink
+    React.useEffect(() => {
+        if (initialReferral) setReferralCode(initialReferral);
+    }, [initialReferral]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

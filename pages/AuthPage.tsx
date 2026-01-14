@@ -11,8 +11,22 @@ interface AuthPageProps {
 
 const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onSignup, onGoogle }) => {
     const [isLoginView, setIsLoginView] = useState(true);
+    const [initialReferral, setInitialReferral] = useState<string | undefined>(undefined);
 
     const toggleView = () => setIsLoginView(!isLoginView);
+
+    React.useEffect(() => {
+        try {
+            const params = new URLSearchParams(window.location.search);
+            const ref = params.get('ref');
+            if (ref) {
+                setIsLoginView(false); // show signup directly
+                setInitialReferral(ref);
+            }
+        } catch (e) {
+            // ignore (server-side or older browsers)
+        }
+    }, []);
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 p-4">
@@ -28,7 +42,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onSignup, onGoogle }) => {
                     {isLoginView ? (
                         <LoginForm onLogin={onLogin} onGoogle={onGoogle} toggleView={toggleView} />
                     ) : (
-                        <SignupForm onSignup={onSignup} toggleView={toggleView} />
+                        <SignupForm onSignup={onSignup} toggleView={toggleView} initialReferral={initialReferral} />
                     )}
                 </div>
             </div>

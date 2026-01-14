@@ -85,6 +85,67 @@ const Commissions: React.FC<CommissionsProps> = ({ commissions, users, currentUs
   }, [currentUser, tickets, raffles]);
 
 
+  // Generate a referral deep link to easily share
+  const generateReferralLink = () => {
+    if (typeof window === 'undefined') return '';
+    const base = window.location.origin || 'https://rifaraiz.com';
+    return `${base}/?ref=${encodeURIComponent(currentUser.referralCode)}`;
+  };
+
+  const [copyMsg, setCopyMsg] = useState<string | null>(null);
+
+  const copyReferralLink = async () => {
+    const link = generateReferralLink();
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(link);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = link;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+      }
+      setCopyMsg('Enlace copiado al portapapeles');
+      setTimeout(() => setCopyMsg(null), 2500);
+    } catch (err) {
+      setCopyMsg('No se pudo copiar el enlace');
+      setTimeout(() => setCopyMsg(null), 2500);
+    }
+  };
+
+  const shareViaWhatsApp = () => {
+    const link = generateReferralLink();
+    const msg = `Únete a RifaRaiz con mi código ${currentUser.referralCode}! Regístrate aquí: ${link}`;
+    const wa = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    window.open(wa, '_blank');
+  };
+
+  const shareViaEmail = () => {
+    const link = generateReferralLink();
+    const subject = 'Únete a RifaRaiz';
+    const body = `Hola! Usa mi código ${currentUser.referralCode} al registrarte en RifaRaiz: ${link}`;
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+
+  const tryWebShare = async () => {
+    const link = generateReferralLink();
+    const shareData: any = {
+      title: 'RifaRaiz - Únete',
+      text: `Regístrate con mi código ${currentUser.referralCode}`,
+      url: link,
+    };
+    try {
+      // @ts-ignore
+      if (navigator.share) await navigator.share(shareData);
+      else setCopyMsg('Funcionalidad de compartir no disponible');
+    } catch (err) {
+      setCopyMsg('No se pudo compartir');
+      setTimeout(() => setCopyMsg(null), 2500);
+    }
+  };
+
   return (
     <div className="bg-gray-800 rounded-lg shadow-lg p-6 space-y-6">
       <div>
@@ -93,6 +154,31 @@ const Commissions: React.FC<CommissionsProps> = ({ commissions, users, currentUs
         {/* Referral Commissions Section */}
         <div>
           <h4 className="font-semibold text-white mb-2">Comisiones por Referidos</h4>
+
+          {/* Share / referral code area */}
+          <div className="flex items-center justify-between bg-gray-700/50 p-3 rounded-md mb-4">
+            <div>
+              <p className="text-sm text-gray-400">Tu código de referido</p>
+              <p className="text-lg font-bold text-indigo-400">{currentUser.referralCode}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={copyReferralLink} className="bg-gray-600 hover:bg-gray-500 p-2 rounded-md text-sm text-white" title="Copiar enlace">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M8 7a1 1 0 011-1h5a1 1 0 011 1v7a1 1 0 11-2 0V8H9a1 1 0 01-1-1z"/><path d="M3 5a2 2 0 012-2h6a2 2 0 012 2v1a1 1 0 11-2 0V5H5v9h4a1 1 0 110 2H5a2 2 0 01-2-2V5z"/></svg>
+              </button>
+              <button onClick={shareViaWhatsApp} className="bg-green-600 hover:bg-green-500 p-2 rounded-md text-sm text-white" title="Compartir por WhatsApp">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M20.52 3.48A11.86 11.86 0 0012 .75 11.86 11.86 0 003.48 3.48 11.86 11.86 0 00.75 12c0 2.02.53 3.9 1.48 5.6L.24 22.5l4.98-1.3A11.94 11.94 0 0012 23.25c2.02 0 3.9-.53 5.6-1.48A11.86 11.86 0 0023.25 12c0-3.17-1.22-6.14-2.73-8.52z"/><path d="M17.1 14.28c-.29-.14-1.72-.85-1.99-.95-.27-.1-.47-.14-.67.14-.2.29-.77.95-.94 1.15-.17.2-.33.22-.62.08-1.69-.83-2.8-1.49-3.93-3.36-.29-.5.29-.46.84-1.53.1-.22.05-.39-.03-.54-.09-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51l-.57-.01c-.19 0-.5.07-.76.36s-1 1-1 2.45c0 1.44 1.03 2.83 1.17 3.03.14.2 2.03 3.17 4.92 4.32 2.13.94 2.78.98 3.74.82.6-.09 1.72-.7 1.96-1.37.24-.67.24-1.25.17-1.37-.07-.12-.27-.2-.57-.34z"/></svg>
+              </button>
+              <button onClick={shareViaEmail} className="bg-blue-600 hover:bg-blue-500 p-2 rounded-md text-sm text-white" title="Compartir por correo">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M2.94 6.94A2 2 0 014 6h12a2 2 0 011.06.94L10 11 2.94 6.94z"/><path d="M18 8.64v5.86A2 2 0 0116 17H4a2 2 0 01-2-2V8.64l8 4 8-4z"/></svg>
+              </button>
+              <button onClick={tryWebShare} className="bg-indigo-600 hover:bg-indigo-500 p-2 rounded-md text-sm text-white" title="Más opciones">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M15 8a3 3 0 11-2.995-3A3 3 0 0115 8zM7 12a3 3 0 11-2.995-3A3 3 0 017 12zM15 16a3 3 0 11-2.995-3A3 3 0 0115 16z"/></svg>
+              </button>
+            </div>
+          </div>
+
+          {copyMsg && <p className="text-sm text-green-400 mb-3">{copyMsg}</p>}
+
           <div className="grid grid-cols-2 gap-4 text-center">
               <div className="bg-gray-700/50 p-4 rounded-lg">
                   <p className="text-sm text-gray-400">Pendiente</p>
@@ -129,8 +215,6 @@ const Commissions: React.FC<CommissionsProps> = ({ commissions, users, currentUs
             </ul>
           )}
         </div>
-
-        {/* Pack Rewards Section */}
         <div className="border-t border-gray-700 pt-6">
           <div className="flex items-center mb-2 gap-2">
             <h4 className="font-semibold text-white">Recompensas por Packs de Boletos</h4>
