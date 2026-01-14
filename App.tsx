@@ -251,7 +251,7 @@ const App: React.FC = () => {
     }
 
     // Fallback: local users JSON auth
-    const user = users.find(u => (u.email || '').toLowerCase() === (email || '').toLowerCase());
+    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
 
     if (!user) {
         return { success: false, message: "Credenciales inválidas. Por favor, inténtalo de nuevo." };
@@ -365,7 +365,7 @@ const App: React.FC = () => {
       }
     }
 
-    if (users.some(u => (u.email || '').toLowerCase() === (email || '').toLowerCase())) {
+    if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
       return { success: false, message: "El correo electrónico ya está en uso." };
     }
     
@@ -718,7 +718,7 @@ const App: React.FC = () => {
         return { success: false, message: 'Error buscando usuario. Intenta de nuevo.' };
       }
     } else {
-      recipient = users.find(u => (u.email || '').toLowerCase() === (recipientEmail || '').toLowerCase());
+      recipient = users.find(u => u.email.toLowerCase() === recipientEmail.toLowerCase());
       if (!recipient) {
         return { success: false, message: "Usuario no registrado. Verifica el correo electrónico." };
       }
@@ -795,34 +795,6 @@ const App: React.FC = () => {
     return true;
   };
 
-  const handleSaveProfile = async (updated: Partial<User>): Promise<{ success: boolean; message?: string }> => {
-    if (!currentUser) return { success: false, message: 'No user.' };
-
-    const merged = { ...currentUser, ...updated } as User;
-    const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
-
-    if (firebaseConfigured) {
-      try {
-        // Use Users helper to update Firestore
-        await Users.update(currentUser.id, updated as any);
-        // Optimistic local update
-        setUsers(prev => prev.map(u => u.id === currentUser.id ? { ...u, ...updated } : u));
-        setCurrentUser(prev => prev ? { ...prev, ...updated } : null);
-        showToast('Perfil actualizado en Firestore', 'info', 3000);
-        return { success: true };
-      } catch (err) {
-        console.error('Error updating profile in Firestore:', err);
-        return { success: false, message: 'Error actualizando en Firestore.' };
-      }
-    }
-
-    // Local fallback
-    setUsers(prev => prev.map(u => u.id === currentUser.id ? { ...u, ...updated } : u));
-    setCurrentUser(merged);
-    showToast('Perfil actualizado (local)', 'info', 3000);
-    return { success: true };
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
@@ -854,15 +826,6 @@ const App: React.FC = () => {
         onOpenNotifications={() => setShowNotifications(true)}
         hasUnreadNotifications={hasUnreadNotifications}
         onOpenSettings={() => setShowSettings(true)}
-      />
-
-      <SettingsModal
-        isOpen={showSettings}
-        onClose={() => setShowSettings(false)}
-        currentUser={currentUser}
-        onSaveProfile={handleSaveProfile}
-        onUpdatePassword={handleUpdatePassword}
-        onSendVerification={handleResendVerification}
       />
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <Dashboard 

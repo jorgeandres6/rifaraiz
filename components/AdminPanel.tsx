@@ -615,18 +615,7 @@ interface UserManagementProps {
 const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, onAddNotification }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
-    const [formData, setFormData] = useState<any>({
-      name: '',
-      phone: '',
-      city: '',
-      country: '',
-      paymentMethod: 'bank',
-      bankName: '',
-      accountNumber: '',
-      accountType: 'ahorro',
-      cryptoWalletAddress: '',
-      cryptoWalletType: ''
-    });
+    const [formData, setFormData] = useState({ name: '', email: '', role: UserRole.USER });
   
     // Message Modal State
     const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
@@ -638,20 +627,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
 
     const handleEditClick = (user: User) => {
       setEditingUser(user);
-      setFormData({
-        name: user.name || '',
-        phone: user.phone || '',
-        city: user.city || '',
-        country: user.country || '',
-        paymentMethod: user.bankAccount ? 'bank' : (user.cryptoWallet ? 'crypto' : 'bank'),
-        bankName: user.bankAccount?.bankName || '',
-        accountNumber: user.bankAccount?.accountNumber || '',
-        accountType: user.bankAccount?.accountType || 'ahorro',
-        cryptoWalletAddress: user.cryptoWallet?.address || '',
-        cryptoWalletType: user.cryptoWallet?.walletType || ''
-      });
+      setFormData({ name: user.name, email: user.email, role: user.role });
       setIsModalOpen(true);
-    }; 
+    };
   
     const handleCloseModal = () => {
       setIsModalOpen(false);
@@ -660,32 +638,16 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
   
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       const { name, value } = e.target;
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }; 
+      setFormData(prev => ({ ...prev, [name]: value as UserRole }));
+    };
   
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
       if (editingUser) {
-        const updatedUser: User = {
-          ...editingUser,
-          name: formData.name,
-          phone: formData.phone,
-          city: formData.city,
-          country: formData.country,
-          bankAccount: formData.paymentMethod === 'bank' ? {
-            bankName: formData.bankName,
-            accountNumber: formData.accountNumber,
-            accountType: formData.accountType,
-          } : undefined,
-          cryptoWallet: formData.paymentMethod === 'crypto' ? {
-            address: formData.cryptoWalletAddress,
-            walletType: formData.cryptoWalletType,
-          } : undefined,
-        };
-        onUpdateUser(updatedUser);
+        onUpdateUser({ ...editingUser, ...formData });
         handleCloseModal();
       }
-    }; 
+    };
 
     const handleResetPassword = (user: User) => {
       if (window.confirm(`¿Estás seguro de restablecer la contraseña de "${user.name}" a "rifaraiz2026"?`)) {
@@ -779,20 +741,20 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
               </tr>
             </thead>
             <tbody>
-              {users.filter(Boolean).map(user => (
-                <tr key={user?.id} className="border-b border-gray-700 hover:bg-gray-700/30">
-                  <td className="px-6 py-4 font-medium text-white">{user?.name || ''}</td>
-                  <td className="px-6 py-4">{user?.email || ''}</td>
+              {users.map(user => (
+                <tr key={user.id} className="border-b border-gray-700 hover:bg-gray-700/30">
+                  <td className="px-6 py-4 font-medium text-white">{user.name}</td>
+                  <td className="px-6 py-4">{user.email}</td>
                   <td className="px-6 py-4">
                     <span className={`capitalize px-2 py-1 text-xs rounded-full ${
-                      user?.role === UserRole.ADMIN ? 'bg-indigo-500/30 text-indigo-300'
-                      : user?.role === UserRole.INACTIVE ? 'bg-red-500/30 text-red-300'
+                      user.role === UserRole.ADMIN ? 'bg-indigo-500/30 text-indigo-300'
+                      : user.role === UserRole.INACTIVE ? 'bg-red-500/30 text-red-300'
                       : 'bg-gray-600/30 text-gray-300'
                     }`}>
-                      {user?.role}
+                      {user.role}
                     </span>
                   </td>
-                  <td className="px-6 py-4 font-mono">{user?.referralCode || ''}</td>
+                  <td className="px-6 py-4 font-mono">{user.referralCode}</td>
                   <td className="px-6 py-4 text-right flex justify-end space-x-2">
                     <button 
                         onClick={() => handleResetPassword(user)} 
@@ -836,63 +798,18 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
                     <label htmlFor="name" className="block text-sm font-medium text-gray-300">Nombre</label>
                     <input type="text" id="name" name="name" value={formData.name} onChange={handleFormChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" />
                   </div>
-
                   <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-300">Teléfono</label>
-                    <input type="text" id="phone" name="phone" value={formData.phone} onChange={handleFormChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-300">Correo Electrónico</label>
+                    <input type="email" id="email" name="email" value={formData.email} onChange={handleFormChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" />
                   </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="city" className="block text-sm font-medium text-gray-300">Ciudad</label>
-                      <input type="text" id="city" name="city" value={formData.city} onChange={handleFormChange} placeholder="Quito" className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" />
-                    </div>
-                    <div>
-                      <label htmlFor="country" className="block text-sm font-medium text-gray-300">País</label>
-                      <input type="text" id="country" name="country" value={formData.country} onChange={handleFormChange} placeholder="Ecuador" className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" />
-                    </div>
-                  </div>
-
                   <div>
-                    <label htmlFor="paymentMethod" className="block text-sm font-medium text-gray-300">Método de Pago</label>
-                    <select id="paymentMethod" name="paymentMethod" value={formData.paymentMethod} onChange={handleFormChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500">
-                      <option value="bank">Cuenta Bancaria</option>
-                      <option value="crypto">Billetera Crypto</option>
+                    <label htmlFor="role" className="block text-sm font-medium text-gray-300">Rol</label>
+                    <select id="role" name="role" value={formData.role} onChange={handleFormChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500">
+                      <option value={UserRole.USER}>Usuario</option>
+                      <option value={UserRole.ADMIN}>Administrador</option>
+                      <option value={UserRole.INACTIVE}>Inactivo</option>
                     </select>
                   </div>
-
-                  {formData.paymentMethod === 'bank' && (
-                    <>
-                      <div>
-                        <label htmlFor="bankName" className="block text-sm font-medium text-gray-300">Banco</label>
-                        <input id="bankName" name="bankName" value={formData.bankName} onChange={handleFormChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" />
-                      </div>
-                      <div>
-                        <label htmlFor="accountNumber" className="block text-sm font-medium text-gray-300">Número de Cuenta</label>
-                        <input id="accountNumber" name="accountNumber" value={formData.accountNumber} onChange={handleFormChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" />
-                      </div>
-                      <div>
-                        <label htmlFor="accountType" className="block text-sm font-medium text-gray-300">Tipo de Cuenta</label>
-                        <select id="accountType" name="accountType" value={formData.accountType} onChange={handleFormChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500">
-                          <option value="ahorro">Ahorro</option>
-                          <option value="corriente">Corriente</option>
-                        </select>
-                      </div>
-                    </>
-                  )}
-
-                  {formData.paymentMethod === 'crypto' && (
-                    <>
-                      <div>
-                        <label htmlFor="cryptoWalletAddress" className="block text-sm font-medium text-gray-300">Dirección de Wallet</label>
-                        <input id="cryptoWalletAddress" name="cryptoWalletAddress" value={formData.cryptoWalletAddress} onChange={handleFormChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" />
-                      </div>
-                      <div>
-                        <label htmlFor="cryptoWalletType" className="block text-sm font-medium text-gray-300">Tipo de Wallet</label>
-                        <input id="cryptoWalletType" name="cryptoWalletType" value={formData.cryptoWalletType} onChange={handleFormChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" />
-                      </div>
-                    </>
-                  )}
                 </div>
                 <div className="mt-6 flex justify-end space-x-3">
                   <button type="button" onClick={handleCloseModal} className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600">Cancelar</button>
@@ -1010,10 +927,10 @@ const ReferralNetworkStats: React.FC<{ users: User[], tickets: Ticket[], raffles
             return acc;
         }, {} as Record<string, number>);
 
-        return users.filter(Boolean).map(user => {
-            const downline = users.filter(u => u && u.upline?.includes(user.id));
-            const directReferrals = users.filter(u => u && u.referredBy === user.id);
-            const downlineIds = downline.map(u => u?.id).filter(Boolean) as string[];
+        return users.map(user => {
+            const downline = users.filter(u => u.upline?.includes(user.id));
+            const directReferrals = users.filter(u => u.referredBy === user.id);
+            const downlineIds = downline.map(u => u.id);
 
             const networkTickets = tickets.filter(t => downlineIds.includes(t.userId));
             
