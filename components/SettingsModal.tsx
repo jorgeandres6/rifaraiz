@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { XIcon, LockClosedIcon, Cog6ToothIcon, PhoneIcon, MapPinIcon } from './icons';
 import { User } from '../types';
+import { Users } from '../services/firestore';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -35,19 +36,64 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentU
   const [walletAddress, setWalletAddress] = useState(currentUser?.cryptoWallet?.address || '');
   const [walletNetwork, setWalletNetwork] = useState(currentUser?.cryptoWallet?.network || '');
 
+  const [profileLoading, setProfileLoading] = useState(false);
+
   useEffect(() => {
-    // Sync when currentUser changes (modal can be opened while user changes elsewhere)
-    setName(currentUser?.name || '');
-    setPhone(currentUser?.phone || '');
-    setCity(currentUser?.city || '');
-    setCountry(currentUser?.country || '');
-    setPaymentMethod(currentUser?.bankAccount ? 'bank' : (currentUser?.cryptoWallet ? 'crypto' : 'bank'));
-    setBankName(currentUser?.bankAccount?.bankName || '');
-    setAccountType(currentUser?.bankAccount?.accountType || 'ahorro');
-    setIdNumber(currentUser?.bankAccount?.idNumber || '');
-    setAccountNumber(currentUser?.bankAccount?.accountNumber || '');
-    setWalletAddress(currentUser?.cryptoWallet?.address || '');
-    setWalletNetwork(currentUser?.cryptoWallet?.network || '');
+    // Try to fetch the canonical user profile from Firestore when available
+    let mounted = true;
+    const fetchProfile = async () => {
+      setProfileLoading(true);
+      try {
+        if (currentUser && import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID) {
+          const doc = await Users.get(currentUser.id);
+          if (mounted && doc) {
+            setName(doc.name || '');
+            setPhone(doc.phone || '');
+            setCity(doc.city || '');
+            setCountry(doc.country || '');
+            setPaymentMethod(doc.bankAccount ? 'bank' : (doc.cryptoWallet ? 'crypto' : 'bank'));
+            setBankName(doc.bankAccount?.bankName || '');
+            setAccountType(doc.bankAccount?.accountType || 'ahorro');
+            setIdNumber(doc.bankAccount?.idNumber || '');
+            setAccountNumber(doc.bankAccount?.accountNumber || '');
+            setWalletAddress(doc.cryptoWallet?.address || '');
+            setWalletNetwork(doc.cryptoWallet?.network || '');
+          }
+        } else {
+          // Fallback to currentUser prop
+          setName(currentUser?.name || '');
+          setPhone(currentUser?.phone || '');
+          setCity(currentUser?.city || '');
+          setCountry(currentUser?.country || '');
+          setPaymentMethod(currentUser?.bankAccount ? 'bank' : (currentUser?.cryptoWallet ? 'crypto' : 'bank'));
+          setBankName(currentUser?.bankAccount?.bankName || '');
+          setAccountType(currentUser?.bankAccount?.accountType || 'ahorro');
+          setIdNumber(currentUser?.bankAccount?.idNumber || '');
+          setAccountNumber(currentUser?.bankAccount?.accountNumber || '');
+          setWalletAddress(currentUser?.cryptoWallet?.address || '');
+          setWalletNetwork(currentUser?.cryptoWallet?.network || '');
+        }
+      } catch (e) {
+        console.error('Error fetching profile from Firestore:', e);
+        // keep currentUser-based values as fallback
+        setName(currentUser?.name || '');
+        setPhone(currentUser?.phone || '');
+        setCity(currentUser?.city || '');
+        setCountry(currentUser?.country || '');
+        setPaymentMethod(currentUser?.bankAccount ? 'bank' : (currentUser?.cryptoWallet ? 'crypto' : 'bank'));
+        setBankName(currentUser?.bankAccount?.bankName || '');
+        setAccountType(currentUser?.bankAccount?.accountType || 'ahorro');
+        setIdNumber(currentUser?.bankAccount?.idNumber || '');
+        setAccountNumber(currentUser?.bankAccount?.accountNumber || '');
+        setWalletAddress(currentUser?.cryptoWallet?.address || '');
+        setWalletNetwork(currentUser?.cryptoWallet?.network || '');
+      } finally {
+        if (mounted) setProfileLoading(false);
+      }
+    };
+
+    fetchProfile();
+    return () => { mounted = false; };
   }, [currentUser]);
 
   if (!isOpen) return null;
@@ -308,7 +354,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentU
 
                 <div className="pt-4 flex justify-end gap-3">
                     <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors">Cancelar</button>
-                    <button onClick={async () => {
+                    <button disabled={profileLoading} onClick={async () => {
                         setError('');
                         setSuccess('');
                         // validation
@@ -338,7 +384,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentU
                             setError('Error actualizando el perfil.');
                             setTimeout(() => setError(''), 4000);
                         }
-                    }} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors">Guardar Perfil</button>
+                    }} className={`px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors ${profileLoading ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                        {profileLoading ? 'Cargando...' : 'Guardar Perfil'}
+                    </button>
                 </div>
             </div>
         </div>
