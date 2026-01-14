@@ -170,6 +170,28 @@ export const Commissions = {
   update: (id: string, partial: Partial<Commission>) => updateDocument("commissions", id, partial),
 };
 
+// --- Users helpers ---
+export type UserDoc = {
+  name: string;
+  email: string;
+  role?: string;
+  referralCode?: string;
+  upline?: string[];
+  phone?: string;
+  city?: string;
+  password?: string;
+  [k: string]: any;
+};
+
+export const Users = {
+  getAll: (constraints?: QueryConstraint[]) => getCollection<UserDoc>("users", constraints as any),
+  listen: (onChange: (items: Array<UserDoc & { id: string }>) => void, constraints?: QueryConstraint[]) => listenCollection<UserDoc>("users", onChange, constraints),
+  get: (id: string) => getDocument<UserDoc>("users", id),
+  set: (id: string, data: Partial<UserDoc>) => setDocument<UserDoc>("users", id, data as UserDoc),
+  add: (data: Partial<UserDoc>) => addDocument<UserDoc>("users", data as UserDoc),
+  update: (id: string, partial: Partial<UserDoc>) => updateDocument("users", id, partial as any),
+};
+
 // Re-export serverTimestamp for callers that want to use it
 export { serverTimestamp };
 

@@ -9,7 +9,7 @@ import SettingsModal from './components/SettingsModal';
 import Toasts, { Toast } from './components/Toasts';
 
 // Firestore helpers
-import { Raffles, Tickets, Commissions, setDocument, serverTimestamp } from './services/firestore';
+import { Raffles, Tickets, Commissions, Users, setDocument, updateDocument, serverTimestamp } from './services/firestore';
 
 const App: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -35,7 +35,13 @@ const App: React.FC = () => {
       try {
         const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
 
-        const usersRes = await fetch('/data/users.json');
+            const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
+
+        let usersRes: Response | null = null;
+        if (!firebaseConfigured) {
+          usersRes = await fetch('/data/users.json');
+        }
+
         const rafflesRes = await fetch('/data/raffles.json');
         const ticketsRes = await fetch('/data/tickets.json');
         let commissionsRes: Response | null = null;
@@ -47,7 +53,6 @@ const App: React.FC = () => {
           throw new Error('La respuesta de la red no fue correcta');
         }
 
-        const usersData: User[] = await usersRes.json();
         const rafflesData: Raffle[] = await rafflesRes.json();
         const ticketsData: any[] = await ticketsRes.json();
 
@@ -56,11 +61,15 @@ const App: React.FC = () => {
           purchaseDate: new Date(ticket.purchaseDate),
         }));
 
-        setUsers(usersData);
         setRaffles(rafflesData);
         setTickets(parsedTickets);
 
-        // If Firebase is NOT configured, load commissions from local JSON. Otherwise Firestore listeners will populate them.
+        // If Firebase is NOT configured, load users and commissions from local JSON. Otherwise Firestore listeners will populate them.
+        if (!firebaseConfigured && usersRes) {
+          const usersData: User[] = await usersRes.json();
+          setUsers(usersData);
+        }
+
         if (!firebaseConfigured && commissionsRes) {
           const commissionsData: any[] = await commissionsRes.json();
           const parsedCommissions: Commission[] = commissionsData.map(c => ({
@@ -108,6 +117,7 @@ const App: React.FC = () => {
     let rafflesUnsub: (() => void) | null = null;
     let ticketsUnsub: (() => void) | null = null;
     let commissionsUnsub: (() => void) | null = null;
+    let usersUnsub: (() => void) | null = null;
 
     try {
       rafflesUnsub = Raffles.listen((items: any[]) => {
@@ -135,6 +145,18 @@ const App: React.FC = () => {
         setCommissions(parsed);
       });
 
+      usersUnsub = Users.listen((items: any[]) => {
+        const parsed = items.map((u: any) => ({
+          id: u.id,
+          name: u.name || '',
+          email: u.email || '',
+          role: (u.role || '').toLowerCase(),
+          referralCode: u.referralCode || '',
+          upline: u.upline || [],
+        }));
+        setUsers(parsed);
+      });
+
       console.log('Firestore listeners initialized');
     } catch (err) {
       console.error('Error initializing Firestore listeners:', err);
@@ -145,6 +167,7 @@ const App: React.FC = () => {
       if (rafflesUnsub) rafflesUnsub();
       if (ticketsUnsub) ticketsUnsub();
       if (commissionsUnsub) commissionsUnsub();
+      if (usersUnsub) usersUnsub();
     };
   }, []);
 
@@ -603,11 +626,32 @@ const App: React.FC = () => {
     ));
   };
 
-  const handleUpdateUser = (updatedUser: User) => {
+  const handleUpdateUser = async (updatedUser: User) => {
     if (currentUser?.role !== UserRole.ADMIN) return;
-    
-    // Securely update the user list by merging existing user data with updates
-    // This ensures properties like passwords are not lost if not explicitly passed
+
+    const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
+
+    // If Firebase configured, persist changes to Firestore (attempt to update existing user doc)
+    if (firebaseConfigured) {
+      try {
+        const { id, ...rest } = updatedUser as any;
+        // Use update when possible to avoid overwriting fields unintentionally
+        await Users.update(updatedUser.id, rest);
+        // Optimistic local update (listener will eventually sync)
+        setUsers(prevUsers => prevUsers.map(user => user.id === updatedUser.id ? { ...user, ...updatedUser } : user));
+
+        if (currentUser.id === updatedUser.id) {
+          setCurrentUser(prev => prev ? { ...prev, ...updatedUser } : null);
+        }
+        showToast('Usuario actualizado en Firestore', 'info', 3000);
+        return;
+      } catch (err) {
+        console.error('Error updating user in Firestore:', err);
+        showToast('Error actualizando usuario en Firestore', 'error', 5000);
+      }
+    }
+
+    // Fallback: local update
     setUsers(prevUsers => prevUsers.map(user => 
         user.id === updatedUser.id ? { ...user, ...updatedUser } : user
     ));
