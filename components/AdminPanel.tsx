@@ -741,20 +741,20 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
               </tr>
             </thead>
             <tbody>
-              {users.map(user => (
-                <tr key={user.id} className="border-b border-gray-700 hover:bg-gray-700/30">
-                  <td className="px-6 py-4 font-medium text-white">{user.name}</td>
-                  <td className="px-6 py-4">{user.email}</td>
+              {users.filter(Boolean).map(user => (
+                <tr key={user?.id} className="border-b border-gray-700 hover:bg-gray-700/30">
+                  <td className="px-6 py-4 font-medium text-white">{user?.name || ''}</td>
+                  <td className="px-6 py-4">{user?.email || ''}</td>
                   <td className="px-6 py-4">
                     <span className={`capitalize px-2 py-1 text-xs rounded-full ${
-                      user.role === UserRole.ADMIN ? 'bg-indigo-500/30 text-indigo-300'
-                      : user.role === UserRole.INACTIVE ? 'bg-red-500/30 text-red-300'
+                      user?.role === UserRole.ADMIN ? 'bg-indigo-500/30 text-indigo-300'
+                      : user?.role === UserRole.INACTIVE ? 'bg-red-500/30 text-red-300'
                       : 'bg-gray-600/30 text-gray-300'
                     }`}>
-                      {user.role}
+                      {user?.role}
                     </span>
                   </td>
-                  <td className="px-6 py-4 font-mono">{user.referralCode}</td>
+                  <td className="px-6 py-4 font-mono">{user?.referralCode || ''}</td>
                   <td className="px-6 py-4 text-right flex justify-end space-x-2">
                     <button 
                         onClick={() => handleResetPassword(user)} 
@@ -927,10 +927,10 @@ const ReferralNetworkStats: React.FC<{ users: User[], tickets: Ticket[], raffles
             return acc;
         }, {} as Record<string, number>);
 
-        return users.map(user => {
-            const downline = users.filter(u => u.upline?.includes(user.id));
-            const directReferrals = users.filter(u => u.referredBy === user.id);
-            const downlineIds = downline.map(u => u.id);
+        return users.filter(Boolean).map(user => {
+            const downline = users.filter(u => u && u.upline?.includes(user.id));
+            const directReferrals = users.filter(u => u && u.referredBy === user.id);
+            const downlineIds = downline.map(u => u?.id).filter(Boolean) as string[];
 
             const networkTickets = tickets.filter(t => downlineIds.includes(t.userId));
             

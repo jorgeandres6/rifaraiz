@@ -11,6 +11,9 @@ interface CommissionsProps {
 }
 
 const Commissions: React.FC<CommissionsProps> = ({ commissions, users, currentUser, raffles, tickets }) => {
+  // Defensive: wait for currentUser to be available
+  if (!currentUser) return null;
+
   const [showTooltip, setShowTooltip] = useState(false);
   const myCommissions = commissions.filter(c => c.userId === currentUser.id);
 
@@ -161,7 +164,7 @@ const Commissions: React.FC<CommissionsProps> = ({ commissions, users, currentUs
           <div className="flex items-center justify-between bg-gray-700/50 p-3 rounded-md mb-4">
             <div>
               <p className="text-sm text-gray-400">Tu código de referido</p>
-              <p className="text-lg font-bold text-indigo-400">{currentUser.referralCode}</p>
+              <p className="text-lg font-bold text-indigo-400">{currentUser.referralCode || '-'}</p>
             </div>
             <div className="flex items-center gap-2">
               <button onClick={copyReferralLink} className="bg-gray-600 hover:bg-gray-500 p-2 rounded-md text-sm text-white" title="Copiar enlace">
@@ -274,7 +277,7 @@ const Commissions: React.FC<CommissionsProps> = ({ commissions, users, currentUs
       </div>
       
       <p className="text-center text-sm text-gray-300 border-t border-gray-700 pt-6">
-          Tu código de referido: <strong className="text-indigo-400 bg-gray-700 px-2 py-1 rounded">{currentUser.referralCode}</strong>
+          Tu código de referido: <strong className="text-indigo-400 bg-gray-700 px-2 py-1 rounded">{currentUser.referralCode || '-'}</strong>
       </p>
 
     </div>

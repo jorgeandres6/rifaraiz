@@ -6,11 +6,11 @@ import { XIcon, UserCircleIcon, MailIcon, PhoneIcon, MapPinIcon, BuildingStoreIc
 interface BusinessInfoModalProps {
   isOpen: boolean;
   onClose: () => void;
-  user: User;
+  user?: User | null;
 }
 
 const BusinessInfoModal: React.FC<BusinessInfoModalProps> = ({ isOpen, onClose, user }) => {
-  if (!isOpen) return null;
+  if (!isOpen || !user) return null;
 
   // Mock phone and city if not present in the base User type, 
   // though in a real scenario these should be in the User interface.

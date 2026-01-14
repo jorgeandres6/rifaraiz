@@ -15,6 +15,9 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ currentUser, allUsers, switchUser, onLogout, onOpenNotifications, hasUnreadNotifications, onOpenSettings }) => {
+  // Defensive: if there's no logged user yet, render nothing (header depends on user data)
+  if (!currentUser) return null;
+
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 

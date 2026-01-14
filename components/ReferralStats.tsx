@@ -10,15 +10,18 @@ interface ReferralStatsProps {
 }
 
 const ReferralStats: React.FC<ReferralStatsProps> = ({ currentUser, users, tickets, raffles }) => {
+    // Defensive: if currentUser isn't available yet, don't try to compute network stats
+    if (!currentUser) return null;
+
     const networkStats = useMemo(() => {
         const rafflePriceMap = raffles.reduce((acc, r) => {
             acc[r.id] = r.ticketPrice;
             return acc;
         }, {} as Record<string, number>);
 
-        const directReferrals = users.filter(u => u.referredBy === currentUser.id);
-        const downline = users.filter(u => u.upline?.includes(currentUser.id));
-        const downlineIds = downline.map(u => u.id);
+        const directReferrals = users.filter(u => u && u.referredBy === currentUser.id);
+        const downline = users.filter(u => u && u.upline?.includes(currentUser.id));
+        const downlineIds = downline.map(u => u?.id).filter(Boolean) as string[];
         const networkTickets = tickets.filter(t => downlineIds.includes(t.userId));
         
         const totalNetworkSales = networkTickets.reduce((sum, ticket) => {
@@ -74,9 +77,9 @@ const ReferralStats: React.FC<ReferralStatsProps> = ({ currentUser, users, ticke
                             <tbody>
                                 {networkStats.directReferrals.map(user => (
                                     <tr key={user.id} className="border-b border-gray-700 hover:bg-gray-700/30">
-                                        <td className="px-4 py-2 font-medium text-white">{user.name}</td>
-                                        <td className="px-4 py-2">{user.email}</td>
-                                        <td className="px-4 py-2 font-mono">{user.referralCode}</td>
+                                        <td className="px-4 py-2 font-medium text-white">{user.name || user.email || '-'}</td>
+                                        <td className="px-4 py-2">{user.email || '-'}</td>
+                                        <td className="px-4 py-2 font-mono">{user.referralCode || '-'}</td>
                                     </tr>
                                 ))}
                             </tbody>

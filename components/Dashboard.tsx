@@ -43,6 +43,9 @@ const Dashboard: React.FC<DashboardProps> = ({
   onCloseRoulette,
   onAddNotification,
 }) => {
+  // Defensive: wait for currentUser to be set before operating on user-specific data
+  if (!currentUser) return null;
+
   const [activeTab, setActiveTab] = useState('buy');
   const myTickets = tickets.filter(t => t.userId === currentUser.id);
 

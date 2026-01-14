@@ -11,6 +11,8 @@ interface LeaderboardsPageProps {
 }
 
 const LeaderboardsPage: React.FC<LeaderboardsPageProps> = ({ users, tickets, raffles, currentUser }) => {
+    // Defensive: don't attempt calculations until currentUser is available
+    if (!currentUser) return null;
 
     const salesData = useMemo(() => {
         // NOTE: This calculation is an approximation based on the raffle's base ticket price.
@@ -20,13 +22,13 @@ const LeaderboardsPage: React.FC<LeaderboardsPageProps> = ({ users, tickets, raf
             return acc;
         }, {} as Record<string, number>);
 
-        const userSales = users.map(user => {
+        const userSales = users.filter(Boolean).map(user => {
             // Direct referral sales calculation:
             // 1. Tickets originally purchased by direct referrals (originalUserId matches a referral).
             // 2. Tickets originally purchased by the user but transferred to someone else (resale).
             // Logic explicitly excludes tickets bought by the user and kept by the user.
             const directReferralIds = users
-                .filter(u => u.referredBy === user.id)
+                .filter(u => u && u.referredBy === user.id)
                 .map(u => u.id);
 
             const directSales = tickets
@@ -56,7 +58,7 @@ const LeaderboardsPage: React.FC<LeaderboardsPageProps> = ({ users, tickets, raf
 
             return {
                 id: user.id,
-                name: user.name,
+                name: user.name || user.email || '-',
                 directSales,
                 networkSales,
             };
