@@ -1,21 +1,54 @@
 
-import React, { useState } from 'react';
-import { XIcon, LockClosedIcon, Cog6ToothIcon } from './icons';
+import React, { useState, useEffect } from 'react';
+import { XIcon, LockClosedIcon, Cog6ToothIcon, PhoneIcon, MapPinIcon } from './icons';
+import { User } from '../types';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  currentUser: User;
+  onSaveProfile: (updated: Partial<User>) => Promise<{ success: boolean; message?: string }>;
   onUpdatePassword: (currentPass: string, newPass: string) => boolean;
   onSendVerification?: () => Promise<{ success: boolean; message?: string }>;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onUpdatePassword, onSendVerification }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentUser, onSaveProfile, onUpdatePassword, onSendVerification }) => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [sendingVerification, setSendingVerification] = useState(false);
+
+  // Profile fields
+  const [name, setName] = useState(currentUser?.name || '');
+  const [phone, setPhone] = useState(currentUser?.phone || '');
+  const [city, setCity] = useState(currentUser?.city || '');
+  const [country, setCountry] = useState(currentUser?.country || '');
+  const [paymentMethod, setPaymentMethod] = useState<'bank' | 'crypto'>(currentUser?.bankAccount ? 'bank' : (currentUser?.cryptoWallet ? 'crypto' : 'bank'));
+  // Bank
+  const [bankName, setBankName] = useState(currentUser?.bankAccount?.bankName || '');
+  const [accountType, setAccountType] = useState<'ahorro' | 'corriente'>(currentUser?.bankAccount?.accountType || 'ahorro');
+  const [idNumber, setIdNumber] = useState(currentUser?.bankAccount?.idNumber || '');
+  const [accountNumber, setAccountNumber] = useState(currentUser?.bankAccount?.accountNumber || '');
+  // Crypto
+  const [walletAddress, setWalletAddress] = useState(currentUser?.cryptoWallet?.address || '');
+  const [walletNetwork, setWalletNetwork] = useState(currentUser?.cryptoWallet?.network || '');
+
+  useEffect(() => {
+    // Sync when currentUser changes (modal can be opened while user changes elsewhere)
+    setName(currentUser?.name || '');
+    setPhone(currentUser?.phone || '');
+    setCity(currentUser?.city || '');
+    setCountry(currentUser?.country || '');
+    setPaymentMethod(currentUser?.bankAccount ? 'bank' : (currentUser?.cryptoWallet ? 'crypto' : 'bank'));
+    setBankName(currentUser?.bankAccount?.bankName || '');
+    setAccountType(currentUser?.bankAccount?.accountType || 'ahorro');
+    setIdNumber(currentUser?.bankAccount?.idNumber || '');
+    setAccountNumber(currentUser?.bankAccount?.accountNumber || '');
+    setWalletAddress(currentUser?.cryptoWallet?.address || '');
+    setWalletNetwork(currentUser?.cryptoWallet?.network || '');
+  }, [currentUser]);
 
   if (!isOpen) return null;
 
@@ -187,6 +220,136 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onUpdate
                 </div>
             </div>
         </form>
+
+        {/* Profile edit section */}
+        <div className="p-6 border-t border-gray-700">
+            <h4 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-2">Perfil</h4>
+            <div className="space-y-3">
+                <div>
+                    <label className="block text-sm text-gray-300">Correo Electrónico</label>
+                    <input value={currentUser.email} disabled className="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md p-2.5 text-gray-400" />
+                </div>
+                <div>
+                    <label className="block text-sm text-gray-300">Tipo de Usuario</label>
+                    <input value={currentUser.role} disabled className="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md p-2.5 text-gray-400" />
+                </div>
+                <div>
+                    <label className="block text-sm text-gray-300">Nombre</label>
+                    <input value={name} onChange={(e) => setName(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2.5 text-white" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm text-gray-300">Teléfono</label>
+                        <div className="mt-1 relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <PhoneIcon className="h-5 w-5 text-gray-400" />
+                            </div>
+                            <input value={phone} onChange={(e) => setPhone(e.target.value)} className="block w-full bg-gray-900 border border-gray-600 rounded-md p-2.5 pl-10 text-white" />
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm text-gray-300">Ciudad</label>
+                        <div className="mt-1 relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <MapPinIcon className="h-5 w-5 text-gray-400" />
+                            </div>
+                            <input value={city} onChange={(e) => setCity(e.target.value)} className="block w-full bg-gray-900 border border-gray-600 rounded-md p-2.5 pl-10 text-white" />
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label className="block text-sm text-gray-300">País</label>
+                    <input value={country} onChange={(e) => setCountry(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2.5 text-white" />
+                </div>
+
+                <div>
+                    <label className="block text-sm text-gray-300">Método de Pago</label>
+                    <div className="mt-1 flex gap-4 items-center">
+                        <label className="inline-flex items-center gap-2">
+                            <input type="radio" name="pm2" checked={paymentMethod === 'bank'} onChange={() => setPaymentMethod('bank')} />
+                            <span className="text-sm text-gray-300">Cuenta Bancaria</span>
+                        </label>
+                        <label className="inline-flex items-center gap-2">
+                            <input type="radio" name="pm2" checked={paymentMethod === 'crypto'} onChange={() => setPaymentMethod('crypto')} />
+                            <span className="text-sm text-gray-300">Billetera Crypto</span>
+                        </label>
+                    </div>
+                </div>
+
+                {paymentMethod === 'bank' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm text-gray-300">Banco / Cooperativa</label>
+                            <input value={bankName} onChange={(e) => setBankName(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2.5 text-white" />
+                        </div>
+                        <div>
+                            <label className="block text-sm text-gray-300">Tipo de Cuenta</label>
+                            <select value={accountType} onChange={(e) => setAccountType(e.target.value as any)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2.5 text-white">
+                                <option value="ahorro">Ahorros</option>
+                                <option value="corriente">Corriente</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm text-gray-300">Cédula / RUC</label>
+                            <input value={idNumber} onChange={(e) => setIdNumber(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2.5 text-white" />
+                        </div>
+                        <div>
+                            <label className="block text-sm text-gray-300">Número de Cuenta</label>
+                            <input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2.5 text-white" />
+                        </div>
+                    </div>
+                )}
+
+                {paymentMethod === 'crypto' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm text-gray-300">Número de Billetera</label>
+                            <input value={walletAddress} onChange={(e) => setWalletAddress(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2.5 text-white" />
+                        </div>
+                        <div>
+                            <label className="block text-sm text-gray-300">Red</label>
+                            <input value={walletNetwork} onChange={(e) => setWalletNetwork(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2.5 text-white" />
+                        </div>
+                    </div>
+                )}
+
+                <div className="pt-4 flex justify-end gap-3">
+                    <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors">Cancelar</button>
+                    <button onClick={async () => {
+                        setError('');
+                        setSuccess('');
+                        // validation
+                        if (!name) { setError('El nombre es requerido.'); return; }
+                        if (paymentMethod === 'bank' && (!bankName || !idNumber || !accountNumber)) { setError('Por favor completa los datos bancarios.'); return; }
+                        if (paymentMethod === 'crypto' && (!walletAddress || !walletNetwork)) { setError('Por favor completa los datos de billetera.'); return; }
+
+                        const payload: any = {
+                            name,
+                            phone: phone || null,
+                            city: city || null,
+                            country: country || null,
+                        };
+                        if (paymentMethod === 'bank') payload.bankAccount = { bankName, accountType, idNumber, accountNumber };
+                        else payload.cryptoWallet = { address: walletAddress, network: walletNetwork };
+
+                        try {
+                            const res = await onSaveProfile(payload);
+                            if (res.success) {
+                                setSuccess('Perfil actualizado.');
+                                setTimeout(() => setSuccess(''), 2000);
+                            } else {
+                                setError(res.message || 'No se pudo actualizar el perfil.');
+                                setTimeout(() => setError(''), 4000);
+                            }
+                        } catch (e) {
+                            setError('Error actualizando el perfil.');
+                            setTimeout(() => setError(''), 4000);
+                        }
+                    }} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors">Guardar Perfil</button>
+                </div>
+            </div>
+        </div>
       </div>
     </div>
   );
