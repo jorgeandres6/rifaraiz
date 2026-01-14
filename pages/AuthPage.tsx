@@ -7,9 +7,10 @@ interface AuthPageProps {
     onLogin: (email: string, pass: string) => Promise<{ success: boolean; message?: string }>;
     onSignup: (name: string, email: string, pass: string, phone: string, city: string, referralCode?: string) => Promise<{ success: boolean; message?: string }>;
     onGoogle?: () => Promise<{ success: boolean; message?: string }>;
+    onPasswordReset?: (email: string) => Promise<{ success: boolean; message?: string }>;
 }
 
-const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onSignup, onGoogle }) => {
+const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onSignup, onGoogle, onPasswordReset }) => {
     const [isLoginView, setIsLoginView] = useState(true);
     const [initialReferral, setInitialReferral] = useState<string | undefined>(undefined);
 
@@ -40,7 +41,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onSignup, onGoogle }) => {
 
                 <div className="bg-gray-800 rounded-lg shadow-xl p-8">
                     {isLoginView ? (
-                        <LoginForm onLogin={onLogin} onGoogle={onGoogle} toggleView={toggleView} />
+                        <LoginForm onLogin={onLogin} onGoogle={onGoogle} toggleView={toggleView} onPasswordReset={onPasswordReset} />
                     ) : (
                         <SignupForm onSignup={onSignup} toggleView={toggleView} initialReferral={initialReferral} />
                     )}

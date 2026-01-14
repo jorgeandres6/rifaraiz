@@ -6,14 +6,17 @@ interface LoginFormProps {
     onLogin: (email: string, pass: string) => Promise<{ success: boolean; message?: string }>;
     onGoogle?: () => Promise<{ success: boolean; message?: string }>;
     toggleView: () => void;
+    onPasswordReset?: (email: string) => Promise<{ success: boolean; message?: string }>;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onGoogle, toggleView }) => {
+const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onGoogle, toggleView, onPasswordReset }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [googleLoading, setGoogleLoading] = useState(false);
+    const [resetLoading, setResetLoading] = useState(false);
+    const [resetMsg, setResetMsg] = useState<string | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -71,6 +74,38 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onGoogle, toggleView }) 
             <button type="submit" disabled={loading} className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${loading ? 'bg-indigo-500 cursor-wait' : 'bg-indigo-600 hover:bg-indigo-700'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 focus:ring-offset-gray-800`}>
                 {loading ? 'Iniciando...' : 'Iniciar Sesión'}
             </button>
+
+            <div className="flex items-center justify-between mt-2">
+                <button type="button" onClick={async () => {
+                    setError('');
+                    setResetMsg(null);
+                    if (!onPasswordReset) {
+                        setError('Función de recuperación no disponible.');
+                        return;
+                    }
+                    if (!email) {
+                        setError('Por favor ingresa tu correo para recuperar la contraseña.');
+                        return;
+                    }
+                    setResetLoading(true);
+                    try {
+                        const res = await onPasswordReset(email);
+                        if (res.success) {
+                            setResetMsg(res.message || 'Correo de recuperación enviado.');
+                        } else {
+                            setError(res.message || 'No se pudo enviar el correo de recuperación.');
+                        }
+                    } catch (err) {
+                        setError('Error enviando correo de recuperación.');
+                    } finally {
+                        setResetLoading(false);
+                        setTimeout(() => setResetMsg(null), 4000);
+                    }
+                }} className="text-sm text-indigo-400 hover:text-indigo-300 font-medium">
+                    {resetLoading ? 'Enviando...' : '¿Olvidaste tu contraseña?'}
+                </button>
+                {resetMsg && <p className="text-sm text-green-400">{resetMsg}</p>}
+            </div>
 
             <div className="space-y-3">
                 <button type="button" onClick={handleGoogle} disabled={googleLoading} className={`w-full flex items-center justify-center gap-3 py-2 px-4 border border-gray-600 rounded-md text-sm font-medium text-white ${googleLoading ? 'bg-gray-700 cursor-wait' : 'bg-white/6 hover:bg-white/10'}`}>

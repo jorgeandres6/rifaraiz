@@ -333,6 +333,24 @@ const App: React.FC = () => {
     }
   };
 
+  const handleSendPasswordReset = async (email: string): Promise<{ success: boolean; message?: string }> => {
+    const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
+    if (!firebaseConfigured) return { success: false, message: 'Firebase no está configurado.' };
+    try {
+      const { sendPasswordReset } = await import('./services/auth');
+      const res = await sendPasswordReset(email);
+      if (res.success) {
+        showToast(res.message || 'Correo enviado', 'info', 5000);
+        return { success: true };
+      }
+      showToast(res.message || 'Error enviando correo de recuperación', 'error', 5000);
+      return { success: false, message: res.message };
+    } catch (err: any) {
+      showToast(err?.message || 'No se pudo enviar el correo de recuperación', 'error', 5000);
+      return { success: false, message: err?.message || 'No se pudo enviar el correo de recuperación' };
+    }
+  };
+
   const handleSignup = async (name: string, email: string, pass: string, phone: string, city: string, referralCode?: string): Promise<{ success: boolean; message?: string }> => {
     const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
     if (firebaseConfigured) {
@@ -786,7 +804,7 @@ const App: React.FC = () => {
   }
 
   if (!currentUser) {
-    return <AuthPage onLogin={handleLogin} onSignup={handleSignup} onGoogle={handleGoogleSignIn} />;
+    return <AuthPage onLogin={handleLogin} onSignup={handleSignup} onGoogle={handleGoogleSignIn} onPasswordReset={handleSendPasswordReset} />;
   }
 
   const myNotifications = notifications.filter(n => n.userId === currentUser.id);

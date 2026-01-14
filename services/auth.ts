@@ -135,6 +135,16 @@ export async function resendVerificationEmail() {
   }
 }
 
+export async function sendPasswordReset(email: string) {
+  if (!email) return { success: false, message: 'Ingrese un correo válido.' };
+  try {
+    await import('firebase/auth').then(({ sendPasswordResetEmail }) => sendPasswordResetEmail(auth, email));
+    return { success: true, message: 'Correo de recuperación enviado. Revisa tu bandeja.' };
+  } catch (err: any) {
+    return { success: false, message: err?.message || 'No se pudo enviar el correo de recuperación.' };
+  }
+}
+
 export async function logout() {
   await firebaseSignOut(auth);
 }
