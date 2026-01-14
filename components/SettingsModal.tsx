@@ -226,14 +226,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentU
             <h4 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-2">Perfil</h4>
             <div className="space-y-3">
                 <div>
-                    <label className="block text-sm text-gray-300">Correo Electrónico</label>
-                    <input value={currentUser?.email || ''} disabled className="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md p-2.5 text-gray-400" />
-                </div>
-                <div>
-                    <label className="block text-sm text-gray-300">Tipo de Usuario</label>
-                    <input value={currentUser?.role || ''} disabled className="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md p-2.5 text-gray-400" />
-                </div>
-                <div>
                     <label className="block text-sm text-gray-300">Nombre</label>
                     <input value={name} onChange={(e) => setName(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2.5 text-white" />
                 </div>
