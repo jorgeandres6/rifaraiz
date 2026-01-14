@@ -32,7 +32,7 @@ export function listenToUser(identifier: string, cb: (data: any | null) => void)
   return unsub;
 }
 
-export async function signupWithEmail({ name, email, password, phone, city, referralCode }: { name: string; email: string; password: string; phone?: string; city?: string; referralCode?: string }) {
+export async function signupWithEmail({ name, email, password, phone, city, referralCode, country, bankAccount, cryptoWallet }: { name: string; email: string; password: string; phone?: string; city?: string; referralCode?: string; country?: string; bankAccount?: any; cryptoWallet?: any }) {
   const userCred = await createUserWithEmailAndPassword(auth, email, password);
   const fbUser = userCred.user;
 
@@ -60,6 +60,9 @@ export async function signupWithEmail({ name, email, password, phone, city, refe
     email,
     phone: phone || null,
     city: city || null,
+    country: country || null,
+    bankAccount: bankAccount || null,
+    cryptoWallet: cryptoWallet || null,
     referralCode: generatedReferralCode,
     referredBy: null,
     role: 'user',

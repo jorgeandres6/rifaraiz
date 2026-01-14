@@ -349,12 +349,12 @@ const App: React.FC = () => {
     }
   };
 
-  const handleSignup = async (name: string, email: string, pass: string, phone: string, city: string, referralCode?: string): Promise<{ success: boolean; message?: string }> => {
+  const handleSignup = async (name: string, email: string, pass: string, phone: string, city: string, referralCode?: string, country?: string, bankAccount?: any, cryptoWallet?: any): Promise<{ success: boolean; message?: string }> => {
     const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
     if (firebaseConfigured) {
       try {
         const { signupWithEmail } = await import('./services/auth');
-        const res = await signupWithEmail({ name, email, password: pass, phone, city, referralCode });
+        const res = await signupWithEmail({ name, email, password: pass, phone, city, referralCode, country, bankAccount, cryptoWallet });
         if (!res.success) return { success: false, message: res.message || 'No se pudo crear la cuenta.' };
         // After sign up, onAuthState listener should pick it up; but set current user optimistically
         setCurrentUser({ id: res.user.uid, name: name, email, role: UserRole.USER, referralCode: '' } as any);
@@ -376,6 +376,9 @@ const App: React.FC = () => {
       password: pass,
       role: UserRole.USER,
       referralCode: name.toUpperCase().substring(0, 4) + String(Date.now()).slice(-3),
+      country: country || undefined,
+      bankAccount: bankAccount || undefined,
+      cryptoWallet: cryptoWallet || undefined,
     };
 
     const uplineIdsForJson: { level1?: string; level2?: string; level3?: string } = {};
@@ -421,6 +424,11 @@ const App: React.FC = () => {
             referrerCode: newUser.referralCode,
             referralLink: `https://rifaraiz.com/ref/${newUser.referralCode}`,
             uplineIds: uplineIdsForJson
+        },
+        paymentData: {
+            country: newUser.country || null,
+            bankAccount: newUser.bankAccount || null,
+            cryptoWallet: newUser.cryptoWallet || null
         },
         metadata: {
             sourceIp: "192.168.1.1", // Mock IP

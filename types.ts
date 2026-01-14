@@ -10,6 +10,18 @@ export enum CommissionStatus {
   PAID = 'PAID',
 }
 
+export interface BankAccount {
+  bankName: string;
+  accountType: 'ahorro' | 'corriente';
+  idNumber: string; // cedula or RUC
+  accountNumber: string;
+}
+
+export interface CryptoWallet {
+  address: string;
+  network: string; // e.g. BSC, ETH, TRX
+}
+
 export interface User {
   id: string;
   name: string;
@@ -19,6 +31,9 @@ export interface User {
   referralCode: string;
   referredBy?: string; // ID of the user who referred this user
   upline?: string[]; // Array of upline user IDs, from direct to top
+  country?: string;
+  bankAccount?: BankAccount;
+  cryptoWallet?: CryptoWallet;
 }
 
 export interface TicketPack {
