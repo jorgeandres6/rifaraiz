@@ -163,7 +163,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentU
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[70] p-4 animate-fade-in" onClick={onClose}>
       <div 
-        className="bg-gray-800 rounded-lg shadow-2xl w-full max-w-md relative transform transition-all border border-gray-600" 
+        className="bg-gray-800 rounded-lg shadow-2xl w-full max-w-md relative transform transition-all border border-gray-600 flex flex-col max-h-[90vh]" 
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6 border-b border-gray-700 flex justify-between items-center">
@@ -195,10 +195,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentU
 
         {/* Password tab */}
         {activeTab === 'password' && (
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 p-6 space-y-4 flex flex-col">
              <h4 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-2">Cambiar Contraseña</h4>
              
-             <div>
+             <div className="flex-1">
                 <label htmlFor="currentPass" className="block text-sm font-medium text-gray-300">Contraseña Actual</label>
                 <div className="mt-1 relative rounded-md shadow-sm">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -263,8 +263,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentU
                     {success}
                 </div>
             )}
+             </div>
 
-            <div className="pt-4 flex justify-between items-center">
+            <div className="border-t border-gray-700 p-4 bg-gray-800/50 flex justify-between items-center">
                 <div>
                     <button
                         type="button"
@@ -310,8 +311,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentU
 
         {/* Profile tab */}
         {activeTab === 'profile' && (
-        <div className="p-6 border-t border-gray-700">
-            <h4 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-2">Perfil</h4>
+        <div className="overflow-y-auto flex-1 p-6 border-t border-gray-700">
+            <h4 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-4">Perfil</h4>
             <div className="space-y-3">
                 <div>
                     <label className="block text-sm text-gray-300">Nombre</label>
@@ -434,6 +435,49 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentU
                     </button>
                 </div>
             </div>
+        </div>
+        )}
+
+        {/* Footer with action buttons - shown when profile tab is active */}
+        {activeTab === 'profile' && (
+        <div className="border-t border-gray-700 p-6 bg-gray-800/50 flex justify-end gap-3">
+            <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors">Cancelar</button>
+            <button disabled={profileLoading} onClick={async () => {
+                setError('');
+                setSuccess('');
+                // validation
+                if (!name) { setError('El nombre es requerido.'); return; }
+                if (paymentMethod === 'bank' && (!bankName || !idNumber || !accountNumber)) { setError('Por favor completa los datos bancarios.'); return; }
+                if (paymentMethod === 'crypto' && (!walletAddress || !walletNetwork)) { setError('Por favor completa los datos de billetera.'); return; }
+
+                const payload: any = {
+                    name,
+                    phone: phone || null,
+                    city: city || null,
+                    country: country || null,
+                };
+                if (paymentMethod === 'bank') payload.bankAccount = { bankName, accountType, idNumber, accountNumber };
+                else payload.cryptoWallet = { address: walletAddress, network: walletNetwork };
+
+                setProfileLoading(true);
+                try {
+                    const res = await onSaveProfile(payload);
+                    if (res.success) {
+                        setSuccess('Perfil actualizado.');
+                        setTimeout(() => setSuccess(''), 2000);
+                    } else {
+                        setError(res.message || 'No se pudo actualizar el perfil.');
+                        setTimeout(() => setError(''), 4000);
+                    }
+                } catch (e) {
+                    setError('Error actualizando el perfil.');
+                    setTimeout(() => setError(''), 4000);
+                } finally {
+                    setProfileLoading(false);
+                }
+            }} className={`px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors ${profileLoading ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                {profileLoading ? 'Cargando...' : 'Guardar Perfil'}
+            </button>
         </div>
         )}
       </div>

@@ -1125,6 +1125,7 @@ const ReferralNetworkStats: React.FC<{ users: User[], tickets: Ticket[], raffles
     const [paymentMethod, setPaymentMethod] = useState('');
     const [paymentNotes, setPaymentNotes] = useState('');
     const [revertNotes, setRevertNotes] = useState('');
+    const [showOnlyPending, setShowOnlyPending] = useState(false);
 
     const handleOpenPaymentModal = (commission: Commission) => {
         setPaymentModalCommission(commission);
@@ -1243,8 +1244,46 @@ const ReferralNetworkStats: React.FC<{ users: User[], tickets: Ticket[], raffles
         ? commissions.filter(c => c.userId === selectedUserId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         : [];
 
+    // Calculate total pending commissions across all users
+    const totalPendingCommissions = networkStats.reduce((sum, stat) => sum + stat.pendingCommissions, 0);
+    const totalPendingCount = commissions.filter(c => c.status === 'PENDING').length;
+
+    // Filter stats based on showOnlyPending
+    const filteredStats = showOnlyPending 
+        ? networkStats.filter(stat => stat.pendingCommissions > 0)
+        : networkStats;
+
     return (
       <>
+        {/* Header with stats and filter */}
+        <div className="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-900/50 rounded-lg p-4 border border-gray-700">
+          <div className="flex items-center gap-4">
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-4 py-3">
+              <div className="text-xs text-gray-400 uppercase font-semibold">Comisiones Pendientes</div>
+              <div className="text-2xl font-bold text-yellow-400">${totalPendingCommissions.toFixed(2)}</div>
+              <div className="text-xs text-gray-500 mt-1">{totalPendingCount} comisión{totalPendingCount !== 1 ? 'es' : ''}</div>
+            </div>
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg px-4 py-3">
+              <div className="text-xs text-gray-400 uppercase font-semibold">Usuarios Totales</div>
+              <div className="text-2xl font-bold text-blue-400">{networkStats.length}</div>
+              <div className="text-xs text-gray-500 mt-1">{networkStats.filter(s => s.pendingCommissions > 0).length} con comisiones</div>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <label className="inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showOnlyPending}
+                onChange={(e) => setShowOnlyPending(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="relative w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-yellow-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-600"></div>
+              <span className="ms-3 text-sm font-medium text-gray-300">Solo con comisiones pendientes</span>
+            </label>
+          </div>
+        </div>
+
         <div className="overflow-x-auto bg-gray-900/50 rounded-md border border-gray-700">
           <table className="w-full text-sm text-left text-gray-300">
             <thead className="text-xs text-gray-400 uppercase bg-gray-700/50">
@@ -1260,7 +1299,14 @@ const ReferralNetworkStats: React.FC<{ users: User[], tickets: Ticket[], raffles
               </tr>
             </thead>
             <tbody>
-              {networkStats.map(stat => (
+              {filteredStats.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-8 text-center text-gray-400">
+                    {showOnlyPending ? 'No hay usuarios con comisiones pendientes' : 'No hay usuarios en la red de referidos'}
+                  </td>
+                </tr>
+              ) : (
+                filteredStats.map(stat => (
                 <tr key={stat.userId} className="border-b border-gray-700 hover:bg-gray-700/30">
                   <td className="px-6 py-4 font-medium text-white">{stat.name}</td>
                   <td className="px-6 py-4 font-mono">{stat.referralCode}</td>
@@ -1278,7 +1324,7 @@ const ReferralNetworkStats: React.FC<{ users: User[], tickets: Ticket[], raffles
                     </button>
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>
