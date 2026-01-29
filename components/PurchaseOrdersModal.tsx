@@ -382,7 +382,6 @@ const PurchaseOrdersModal: React.FC<PurchaseOrdersModalProps> = ({
                         </p>
                       </div>
                     )}
-                    </div>
                   </>
                 )}
 
