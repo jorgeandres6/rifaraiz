@@ -239,14 +239,14 @@ const PurchaseOrdersModal: React.FC<PurchaseOrdersModalProps> = ({
                   <div>
                     <p className="text-xs text-gray-500 uppercase font-semibold">Fecha de Creación</p>
                     <p className="text-lg font-bold text-gray-900">
-                      {new Date(selectedOrder.createdAt).toLocaleDateString('es-ES')}
+                      {selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}
                     </p>
                   </div>
                   {selectedOrder.paidAt && (
                     <div>
                       <p className="text-xs text-gray-500 uppercase font-semibold">Fecha de Pago</p>
                       <p className="text-lg font-bold text-gray-900">
-                        {new Date(selectedOrder.paidAt).toLocaleDateString('es-ES')}
+                        {selectedOrder.paidAt ? new Date(selectedOrder.paidAt).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}
                       </p>
                       {selectedOrder.paidByAdminId && (
                         <p className="text-xs text-gray-500 mt-1">
@@ -441,10 +441,10 @@ const PurchaseOrdersModal: React.FC<PurchaseOrdersModalProps> = ({
                       <div className="text-right">
                         <p className="text-xs text-gray-500 uppercase font-semibold">Creada</p>
                         <p className="text-sm text-gray-700">
-                          {new Date(order.createdAt).toLocaleDateString('es-ES', {
+                          {order.createdAt ? new Date(order.createdAt).toLocaleDateString('es-ES', {
                             month: 'short',
                             day: 'numeric',
-                          })}
+                          }) : 'N/A'}
                         </p>
                       </div>
                     </div>

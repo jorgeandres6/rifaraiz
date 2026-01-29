@@ -141,7 +141,7 @@ const UserPurchaseOrders: React.FC<UserPurchaseOrdersProps> = ({
                 ${order.totalPrice.toFixed(2)}
               </p>
               <p className="text-xs text-gray-500">
-                {new Date(order.createdAt).toLocaleDateString('es-ES')}
+                {order.createdAt ? new Date(order.createdAt).toLocaleDateString('es-ES') : 'N/A'}
               </p>
             </div>
           </div>
@@ -202,13 +202,13 @@ const UserPurchaseOrders: React.FC<UserPurchaseOrdersProps> = ({
                 <div>
                   <p className="text-xs font-semibold text-gray-600">Orden Creada</p>
                   <p className="text-sm text-gray-700">
-                    {new Date(order.createdAt).toLocaleDateString('es-ES', {
+                    {order.createdAt ? new Date(order.createdAt).toLocaleDateString('es-ES', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',
                       hour: '2-digit',
                       minute: '2-digit',
-                    })}
+                    }) : 'N/A'}
                   </p>
                 </div>
               </div>
@@ -219,13 +219,13 @@ const UserPurchaseOrders: React.FC<UserPurchaseOrdersProps> = ({
                   <div>
                     <p className="text-xs font-semibold text-gray-600">Pago Recibido</p>
                     <p className="text-sm text-gray-700">
-                      {new Date(order.paidAt).toLocaleDateString('es-ES', {
+                      {order.paidAt ? new Date(order.paidAt).toLocaleDateString('es-ES', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit',
-                      })}
+                      }) : 'N/A'}
                     </p>
                   </div>
                 </div>
@@ -237,13 +237,13 @@ const UserPurchaseOrders: React.FC<UserPurchaseOrdersProps> = ({
                   <div>
                     <p className="text-xs font-semibold text-gray-600">Verificado y Asignado</p>
                     <p className="text-sm text-gray-700">
-                      {new Date(order.verifiedAt).toLocaleDateString('es-ES', {
+                      {order.verifiedAt ? new Date(order.verifiedAt).toLocaleDateString('es-ES', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit',
-                      })}
+                      }) : 'N/A'}
                     </p>
                   </div>
                 </div>

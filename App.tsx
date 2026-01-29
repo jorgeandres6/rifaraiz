@@ -49,7 +49,7 @@ const App: React.FC = () => {
           commissionsRes = await fetch('/data/commissions.json');
         }
 
-        if (!usersRes.ok || !rafflesRes.ok || !ticketsRes.ok || (commissionsRes && !commissionsRes.ok)) {
+        if ((usersRes && !usersRes.ok) || !rafflesRes.ok || !ticketsRes.ok || (commissionsRes && !commissionsRes.ok)) {
           throw new Error('La respuesta de la red no fue correcta');
         }
 
@@ -170,12 +170,22 @@ const App: React.FC = () => {
       });
 
       purchaseOrdersUnsub = PurchaseOrders.listen((items: any[]) => {
-        const parsed = items.map((po: any) => ({
-          ...po,
-          createdAt: po.createdAt && typeof po.createdAt === 'object' && typeof po.createdAt.toDate === 'function' ? po.createdAt.toDate() : po.createdAt,
-          paidAt: po.paidAt && typeof po.paidAt === 'object' && typeof po.paidAt.toDate === 'function' ? po.paidAt.toDate() : po.paidAt,
-          verifiedAt: po.verifiedAt && typeof po.verifiedAt === 'object' && typeof po.verifiedAt.toDate === 'function' ? po.verifiedAt.toDate() : po.verifiedAt,
-        }));
+        const parsed = items.map((po: any) => {
+          // Convert Firestore timestamps to Date objects
+          const convertTimestamp = (ts: any) => {
+            if (!ts) return undefined;
+            if (ts instanceof Date) return ts;
+            if (typeof ts === 'object' && typeof ts.toDate === 'function') return ts.toDate();
+            if (typeof ts === 'number') return new Date(ts);
+            return undefined;
+          };
+          return {
+            ...po,
+            createdAt: convertTimestamp(po.createdAt),
+            paidAt: convertTimestamp(po.paidAt),
+            verifiedAt: convertTimestamp(po.verifiedAt),
+          };
+        });
         setPurchaseOrders(parsed);
       });
 
@@ -570,14 +580,17 @@ const App: React.FC = () => {
     console.log("Prize won and stored:", newUserPrize);
 
     // Decrement prize quantity in the raffle
+    let updatedRaffle: Raffle | undefined;
     setRaffles(prev => prev.map(raffle => {
       if (raffle.id === raffleId) {
-        return {
+        const updated = {
           ...raffle,
           extraPrizes: (raffle.extraPrizes || []).map(p =>
             p.id === prize.id ? { ...p, quantity: Math.max(0, p.quantity - 1) } : p
           )
         };
+        updatedRaffle = updated;
+        return updated;
       }
       return raffle;
     }));
@@ -598,7 +611,6 @@ const App: React.FC = () => {
         });
 
         // Update the raffle with decremented prize quantity
-        const updatedRaffle = raffles.find(r => r.id === raffleId);
         if (updatedRaffle) {
           const { id, ...raffleData } = updatedRaffle as any;
           await updateDocument('raffles', raffleId, raffleData);
