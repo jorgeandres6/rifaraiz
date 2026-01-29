@@ -181,9 +181,21 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle, onPurchase, hasActiveTi
       <div className="p-6 bg-gray-800/50 mt-auto">
         <div className="space-y-3">
           {raffle.extraPrizes && raffle.extraPrizes.length > 0 && (
-              <div className="flex items-center justify-center text-xs text-yellow-400 bg-yellow-500/10 p-2 rounded-md">
-                  <GiftIcon className="h-4 w-4 mr-1.5 flex-shrink-0" />
-                  <span>¡Gira la ruleta de premios con tu compra!</span>
+              <div className="space-y-2">
+                  <div className="flex items-center justify-center text-xs text-yellow-400 bg-yellow-500/10 p-2 rounded-md">
+                      <GiftIcon className="h-4 w-4 mr-1.5 flex-shrink-0" />
+                      <span>¡Gira la ruleta de premios con tu compra!</span>
+                  </div>
+                  <div className="bg-gray-900/50 p-2 rounded-md space-y-1">
+                    {raffle.extraPrizes.map((prize) => (
+                      <div key={prize.id} className="flex justify-between items-center text-xs text-gray-300">
+                        <span className="truncate">{prize.name}</span>
+                        <span className={`font-semibold ${prize.quantity > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {prize.quantity > 0 ? `×${prize.quantity}` : 'Agotado'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
               </div>
           )}
           <select

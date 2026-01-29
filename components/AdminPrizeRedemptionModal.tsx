@@ -17,14 +17,13 @@ const AdminPrizeRedemptionModal: React.FC<AdminPrizeRedemptionModalProps> = ({
   users = [],
   onRedeemPrize,
 }) => {
-  const [selectedPrizeId, setSelectedPrizeId] = useState<string>('');
   const [code, setCode] = useState<string>('');
-  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [foundPrize, setFoundPrize] = useState<UserPrize | null>(null);
+  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' | 'info' } | null>(null);
 
   if (!isOpen) return null;
 
   const unredeemed = userPrizes.filter(p => !p.redeemed);
-  const selectedPrize = userPrizes.find(p => p.id === selectedPrizeId);
   
   // Function to get username from users array
   const getUserName = (userId: string) => {
@@ -32,17 +31,37 @@ const AdminPrizeRedemptionModal: React.FC<AdminPrizeRedemptionModalProps> = ({
     return user?.name || `Usuario ${userId.slice(0, 6)}`;
   };
 
-  const handleRedeem = () => {
-    if (!selectedPrizeId || !code) {
-      setMessage({ text: 'Por favor selecciona un premio e ingresa el código', type: 'error' });
+  const handleSearchCode = () => {
+    setMessage(null);
+    setFoundPrize(null);
+
+    if (!code.trim()) {
+      setMessage({ text: 'Por favor ingresa un código', type: 'error' });
       return;
     }
 
-    const success = onRedeemPrize(selectedPrizeId, code);
+    const prize = unredeemed.find(p => p.code.toUpperCase() === code.toUpperCase());
+    
+    if (!prize) {
+      setMessage({ text: 'No se encontró ningún premio con este código o ya fue canjeado', type: 'error' });
+      return;
+    }
+
+    setFoundPrize(prize);
+    setMessage({ text: 'Premio encontrado. Confirma para canjear', type: 'info' });
+  };
+
+  const handleRedeem = () => {
+    if (!foundPrize || !code) {
+      setMessage({ text: 'Busca un premio primero', type: 'error' });
+      return;
+    }
+
+    const success = onRedeemPrize(foundPrize.id, code);
     if (success) {
       setMessage({ text: 'Premio canjeado exitosamente', type: 'success' });
       setCode('');
-      setSelectedPrizeId('');
+      setFoundPrize(null);
       setTimeout(() => {
         onClose();
         setMessage(null);
@@ -50,6 +69,12 @@ const AdminPrizeRedemptionModal: React.FC<AdminPrizeRedemptionModalProps> = ({
     } else {
       setMessage({ text: 'Error al canjear el premio. Verifica el código', type: 'error' });
     }
+  };
+
+  const handleReset = () => {
+    setCode('');
+    setFoundPrize(null);
+    setMessage(null);
   };
 
   return (
@@ -73,58 +98,68 @@ const AdminPrizeRedemptionModal: React.FC<AdminPrizeRedemptionModalProps> = ({
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Prize Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Selecciona el premio
-              </label>
-              <select
-                value={selectedPrizeId}
-                onChange={(e) => {
-                  setSelectedPrizeId(e.target.value);
-                  setCode('');
-                  setMessage(null);
-                }}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white focus:outline-none focus:border-indigo-500 transition-colors"
-              >
-                <option value="">-- Selecciona un premio --</option>
-                {unredeemed.map((prize) => (
-                  <option key={prize.id} value={prize.id}>
-                    {prize.prizeName} - {getUserName(prize.userId)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Prize Details */}
-            {selectedPrize && (
-              <div className="bg-gray-800 p-3 rounded border border-gray-700">
-                <p className="text-sm text-gray-400">
-                  <span className="font-medium text-gray-300">Premio:</span> {selectedPrize.prizeName}
-                </p>
-                <p className="text-sm text-gray-400">
-                  <span className="font-medium text-gray-300">Usuario:</span> {getUserName(selectedPrize.userId)}
-                </p>
-                <p className="text-sm text-gray-400">
-                  <span className="font-medium text-gray-300">Ganado:</span>{' '}
-                  {new Date(selectedPrize.dateWon).toLocaleDateString('es-MX')}
-                </p>
-              </div>
-            )}
-
             {/* Code Input */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Código de canje
               </label>
-              <input
-                type="text"
-                value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase())}
-                placeholder="Ej: ABC123XY"
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors font-mono"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.toUpperCase())}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearchCode()}
+                  placeholder="Ingresa el código (ej: ABC123XY)"
+                  disabled={!!foundPrize}
+                  className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors font-mono disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+                <button
+                  onClick={foundPrize ? handleReset : handleSearchCode}
+                  className={`px-4 py-2 font-medium rounded transition-colors ${
+                    foundPrize
+                      ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                      : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                  }`}
+                >
+                  {foundPrize ? 'Limpiar' : 'Buscar'}
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Total de premios sin canjear: {unredeemed.length}
+              </p>
             </div>
+
+            {/* Prize Details */}
+            {foundPrize && (
+              <div className="bg-gradient-to-br from-yellow-900/40 to-amber-900/40 border border-yellow-500/30 p-4 rounded-lg">
+                <div className="flex items-center mb-3">
+                  <CheckCircleIcon className="h-5 w-5 text-yellow-400 mr-2" />
+                  <h3 className="text-yellow-400 font-bold">Premio Encontrado</h3>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-300">
+                    <span className="font-medium text-yellow-400">Premio:</span> {foundPrize.prizeName}
+                  </p>
+                  <p className="text-sm text-gray-300">
+                    <span className="font-medium text-yellow-400">Usuario:</span> {getUserName(foundPrize.userId)}
+                  </p>
+                  <p className="text-sm text-gray-300">
+                    <span className="font-medium text-yellow-400">Ganado:</span>{' '}
+                    {new Date(foundPrize.dateWon).toLocaleDateString('es-MX', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                  <p className="text-sm text-gray-300">
+                    <span className="font-medium text-yellow-400">Código:</span>{' '}
+                    <span className="font-mono text-yellow-300">{foundPrize.code}</span>
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Message */}
             {message && (
@@ -132,6 +167,8 @@ const AdminPrizeRedemptionModal: React.FC<AdminPrizeRedemptionModalProps> = ({
                 className={`p-3 rounded text-sm font-medium flex items-center gap-2 ${
                   message.type === 'success'
                     ? 'bg-green-900/30 text-green-400 border border-green-700'
+                    : message.type === 'info'
+                    ? 'bg-blue-900/30 text-blue-400 border border-blue-700'
                     : 'bg-red-900/30 text-red-400 border border-red-700'
                 }`}
               >
@@ -144,9 +181,10 @@ const AdminPrizeRedemptionModal: React.FC<AdminPrizeRedemptionModalProps> = ({
             <div className="flex gap-3 pt-4">
               <button
                 onClick={handleRedeem}
-                className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 px-4 rounded transition-colors"
+                disabled={!foundPrize}
+                className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 px-4 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Canjear
+                Confirmar Canje
               </button>
               <button
                 onClick={onClose}

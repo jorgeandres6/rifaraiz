@@ -642,10 +642,24 @@ const App: React.FC = () => {
     setUserPrizes(prev => [...prev, newUserPrize]);
     console.log("Prize won and stored:", newUserPrize);
 
+    // Decrement prize quantity in the raffle
+    setRaffles(prev => prev.map(raffle => {
+      if (raffle.id === raffleId) {
+        return {
+          ...raffle,
+          extraPrizes: (raffle.extraPrizes || []).map(p =>
+            p.id === prize.id ? { ...p, quantity: Math.max(0, p.quantity - 1) } : p
+          )
+        };
+      }
+      return raffle;
+    }));
+
     // Save to Firestore
     try {
       const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
       if (firebaseConfigured) {
+        // Save the user prize
         await UserPrizes.add({
           userId: newUserPrize.userId,
           prizeId: newUserPrize.prizeId,
@@ -655,6 +669,13 @@ const App: React.FC = () => {
           redeemed: newUserPrize.redeemed,
           code: newUserPrize.code,
         });
+
+        // Update the raffle with decremented prize quantity
+        const updatedRaffle = raffles.find(r => r.id === raffleId);
+        if (updatedRaffle) {
+          const { id, ...raffleData } = updatedRaffle as any;
+          await updateDocument('raffles', raffleId, raffleData);
+        }
       }
     } catch (err) {
       console.error('Error saving prize to Firestore:', err);

@@ -143,10 +143,18 @@ const RouletteModal: React.FC<RouletteModalProps> = ({ raffle, onClose, onPrizeW
         setTimeout(() => {
             setIsSpinning(false);
             if (winningSegment.type === 'win' && (raffle.extraPrizes || []).length > 0) {
-                const actualPrizes = raffle.extraPrizes!;
-                const randomActualPrize = actualPrizes[Math.floor(Math.random() * actualPrizes.length)];
-                setResult({ type: 'win', prize: randomActualPrize });
-                playWinSound(audioCtx);
+                // Get only prizes with available quantity
+                const availablePrizes = (raffle.extraPrizes || []).filter(p => p.quantity > 0);
+                
+                if (availablePrizes.length === 0) {
+                    // No prizes available, treat as loss
+                    setResult({ type: 'loss' });
+                    playLoseSound(audioCtx);
+                } else {
+                    const randomActualPrize = availablePrizes[Math.floor(Math.random() * availablePrizes.length)];
+                    setResult({ type: 'win', prize: randomActualPrize });
+                    playWinSound(audioCtx);
+                }
             } else {
                 setResult({ type: 'loss' });
                 playLoseSound(audioCtx);
@@ -227,8 +235,9 @@ const RouletteModal: React.FC<RouletteModalProps> = ({ raffle, onClose, onPrizeW
                     {/* Center Button */}
                     <button 
                         onClick={!isSpinning && !result ? handleSpin : undefined}
-                        disabled={isSpinning || !!result}
-                        className="absolute z-10 w-24 h-24 bg-black rounded-full border-4 border-gray-800 shadow-inner flex items-center justify-center text-white text-2xl font-bold cursor-pointer disabled:cursor-wait"
+                        disabled={isSpinning || !!result || (raffle.extraPrizes || []).filter(p => p.quantity > 0).length === 0}
+                        title={(raffle.extraPrizes || []).filter(p => p.quantity > 0).length === 0 ? 'No hay premios disponibles' : ''}
+                        className="absolute z-10 w-24 h-24 bg-black rounded-full border-4 border-gray-800 shadow-inner flex items-center justify-center text-white text-2xl font-bold cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         Girar
                     </button>

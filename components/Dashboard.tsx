@@ -199,6 +199,14 @@ const Dashboard: React.FC<DashboardProps> = ({
                                                   }
                                               </p>
                                           </div>
+                                          <div className={`border-t pt-4 mt-4 ${isRedeemed ? 'border-gray-600' : 'border-yellow-500/20'}`}>
+                                              <p className={`text-xs uppercase tracking-wide mb-1 ${isRedeemed ? 'text-gray-600' : 'text-gray-500'}`}>
+                                                  Código de Canje
+                                              </p>
+                                              <p className={`text-lg font-bold font-mono tracking-wider ${isRedeemed ? 'text-gray-400' : 'text-yellow-300'}`}>
+                                                  {prize.code}
+                                              </p>
+                                          </div>
                                           {isRedeemed && (
                                               <div className="w-full mt-4 px-4 py-2 bg-gray-600 text-gray-300 font-medium text-sm rounded-md text-center">
                                                   ✓ Canjeado
