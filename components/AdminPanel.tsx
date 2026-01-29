@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { Raffle, Ticket, Commission, User, UserRole, TicketPack, Notification, UserPrize, PurchaseOrder } from '../types';
 import { generateRaffleContent } from '../services/geminiService';
 import { Users, Commissions } from '../services/firestore';
-import { SparklesIcon, PlusCircleIcon, TicketIcon, CurrencyDollarIcon, ClipboardListIcon, GiftIcon, DocumentChartBarIcon, UsersIcon, PencilIcon, XIcon, ShareIcon, TrophyIcon, InformationCircleIcon, MailIcon, PaperAirplaneIcon, BuildingStoreIcon, LockClosedIcon } from './icons';
+import { SparklesIcon, PlusCircleIcon, TicketIcon, CurrencyDollarIcon, ClipboardListIcon, GiftIcon, DocumentChartBarIcon, UsersIcon, PencilIcon, XIcon, ShareIcon, TrophyIcon, InformationCircleIcon, MailIcon, PaperAirplaneIcon, BuildingStoreIcon, LockClosedIcon, ExclamationTriangleIcon } from './icons';
 import ReportModal from './ReportModal';
 import LeaderboardsPage from './LeaderboardsPage';
 import EditRaffleModal from './EditRaffleModal';
@@ -1113,18 +1113,72 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
     );
   };
 
-const ReferralNetworkStats: React.FC<{ users: User[], tickets: Ticket[], raffles: Raffle[], commissions: Commission[] }> = ({ users, tickets, raffles, commissions }) => {
+const ReferralNetworkStats: React.FC<{ users: User[], tickets: Ticket[], raffles: Raffle[], commissions: Commission[], currentUser: User }> = ({ users, tickets, raffles, commissions, currentUser }) => {
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [updatingCommission, setUpdatingCommission] = useState<string | null>(null);
+    const [paymentModalCommission, setPaymentModalCommission] = useState<Commission | null>(null);
+    const [revertModalCommission, setRevertModalCommission] = useState<Commission | null>(null);
+    const [paymentMethod, setPaymentMethod] = useState('');
+    const [paymentNotes, setPaymentNotes] = useState('');
+    const [revertNotes, setRevertNotes] = useState('');
 
-    const handleToggleCommissionStatus = async (commissionId: string, currentStatus: string) => {
-        setUpdatingCommission(commissionId);
+    const handleOpenPaymentModal = (commission: Commission) => {
+        setPaymentModalCommission(commission);
+        setPaymentMethod('');
+        setPaymentNotes('');
+    };
+
+    const handleOpenRevertModal = (commission: Commission) => {
+        setRevertModalCommission(commission);
+        setRevertNotes('');
+    };
+
+    const handleMarkAsPaid = async () => {
+        if (!paymentModalCommission || !paymentMethod.trim()) {
+            alert('Debe seleccionar un método de pago');
+            return;
+        }
+
+        setUpdatingCommission(paymentModalCommission.id);
         try {
-            const newStatus = currentStatus === 'PAID' ? 'PENDING' : 'PAID';
-            await Commissions.update(commissionId, { status: newStatus });
-            console.log(`Comisión ${commissionId} actualizada a ${newStatus}`);
+            await Commissions.update(paymentModalCommission.id, {
+                status: 'PAID',
+                paymentMethod: paymentMethod,
+                paymentNotes: paymentNotes.trim() || undefined,
+                paidAt: new Date(),
+                paidByAdminId: currentUser.id,
+            });
+            console.log(`Comisión ${paymentModalCommission.id} marcada como pagada`);
+            setPaymentModalCommission(null);
+            setPaymentMethod('');
+            setPaymentNotes('');
         } catch (error) {
-            console.error('Error actualizando comisión:', error);
+            console.error('Error marcando comisión como pagada:', error);
+            alert('Error al marcar la comisión como pagada');
+        } finally {
+            setUpdatingCommission(null);
+        }
+    };
+
+    const handleMarkAsPending = async () => {
+        if (!revertModalCommission || !revertNotes.trim()) {
+            alert('Debe ingresar una observación para revertir el pago');
+            return;
+        }
+
+        setUpdatingCommission(revertModalCommission.id);
+        try {
+            await Commissions.update(revertModalCommission.id, { 
+                status: 'PENDING',
+                revertedAt: new Date(),
+                revertedByAdminId: currentUser.id,
+                revertNotes: revertNotes.trim(),
+            });
+            console.log(`Comisión ${revertModalCommission.id} marcada como pendiente`);
+            setRevertModalCommission(null);
+            setRevertNotes('');
+        } catch (error) {
+            console.error('Error marcando comisión como pendiente:', error);
             alert('Error al actualizar el estado de la comisión');
         } finally {
             setUpdatingCommission(null);
@@ -1313,18 +1367,58 @@ const ReferralNetworkStats: React.FC<{ users: User[], tickets: Ticket[], raffles
                                     {raffle?.title || 'Rifa no encontrada'}
                                   </span>
                                 </div>
+                                {isPaid && commission.paymentMethod && (
+                                  <>
+                                    <div>
+                                      <span className="text-gray-400">Método de pago:</span>
+                                      <span className="ml-2 text-white font-semibold">
+                                        {commission.paymentMethod}
+                                      </span>
+                                    </div>
+                                    {commission.paidAt && (
+                                      <div>
+                                        <span className="text-gray-400">Fecha de pago:</span>
+                                        <span className="ml-2 text-white">
+                                          {new Date(commission.paidAt).toLocaleDateString('es-ES')}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </>
+                                )}
                               </div>
+                              
+                              {isPaid && commission.paymentNotes && (
+                                <div className="mt-2 p-2 bg-gray-900/50 rounded border border-gray-700">
+                                  <span className="text-xs text-gray-400">Observaciones del pago:</span>
+                                  <p className="text-sm text-white mt-1">{commission.paymentNotes}</p>
+                                </div>
+                              )}
+                              
+                              {commission.revertNotes && (
+                                <div className="mt-2 p-3 bg-orange-900/30 rounded border-2 border-orange-500/50">
+                                  <div className="flex items-start gap-2 mb-1">
+                                    <ExclamationTriangleIcon className="h-4 w-4 text-orange-400 mt-0.5 flex-shrink-0" />
+                                    <span className="text-xs font-semibold text-orange-300">Historial de Reversión:</span>
+                                  </div>
+                                  <p className="text-sm text-orange-100 ml-6">{commission.revertNotes}</p>
+                                  {commission.revertedAt && (
+                                    <p className="text-xs text-orange-400 mt-1 ml-6">
+                                      Revertida el {new Date(commission.revertedAt).toLocaleDateString('es-ES')}
+                                    </p>
+                                  )}
+                                </div>
+                              )}
                             </div>
                             
                             {/* Toggle Payment Button */}
                             <div className="flex-shrink-0">
                               <button
-                                onClick={() => handleToggleCommissionStatus(commission.id, commission.status)}
+                                onClick={() => isPaid ? handleOpenRevertModal(commission) : handleOpenPaymentModal(commission)}
                                 disabled={updatingCommission === commission.id}
                                 className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
                                   isPaid
-                                    ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
-                                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                    ? 'bg-orange-600 hover:bg-orange-700 text-white'
+                                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
                                 } disabled:opacity-50 disabled:cursor-not-allowed`}
                               >
                                 {updatingCommission === commission.id ? (
@@ -1375,6 +1469,174 @@ const ReferralNetworkStats: React.FC<{ users: User[], tickets: Ticket[], raffles
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Revert to Pending Modal */}
+        {revertModalCommission && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4">
+            <div className="bg-gray-900 rounded-xl shadow-2xl max-w-md w-full border-2 border-orange-500">
+              {/* Header */}
+              <div className="p-6 border-b-2 border-orange-500 bg-gradient-to-r from-orange-900/50 to-amber-800/50">
+                <h3 className="text-2xl font-bold text-white mb-1">Revertir a Pendiente</h3>
+                <p className="text-orange-200 text-sm">
+                  Esta acción devolverá la comisión al estado pendiente
+                </p>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 space-y-5">
+                {/* Commission Info */}
+                <div className="bg-gray-800/70 p-4 rounded-lg border border-gray-700">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-300 text-sm">Monto de la comisión:</span>
+                    <span className="text-2xl font-bold text-orange-400">
+                      ${revertModalCommission.amount.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-400 space-y-1">
+                    <div>Usuario: {users.find(u => u.id === revertModalCommission.userId)?.name}</div>
+                    {revertModalCommission.paymentMethod && (
+                      <div>Método de pago original: <span className="text-white">{revertModalCommission.paymentMethod}</span></div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Warning */}
+                <div className="bg-orange-900/30 border-2 border-orange-500/50 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <ExclamationTriangleIcon className="h-6 w-6 text-orange-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-orange-200 mb-1">Advertencia</p>
+                      <p className="text-xs text-orange-300">
+                        Al marcar como pendiente, se registrará que esta comisión requiere un nuevo pago. 
+                        Ingresa el motivo de la reversión.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Revert Notes */}
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-2">
+                    Motivo de la Reversión <span className="text-red-400">*</span>
+                  </label>
+                  <textarea
+                    value={revertNotes}
+                    onChange={(e) => setRevertNotes(e.target.value)}
+                    placeholder="Ej: Error en el pago, necesita corrección"
+                    className="w-full px-4 py-3 bg-gray-800 border-2 border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 transition-all"
+                    rows={3}
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Esta observación será registrada para auditoría
+                  </p>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-6 border-t-2 border-gray-800 bg-gray-950/50 flex gap-3">
+                <button
+                  onClick={() => setRevertModalCommission(null)}
+                  className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleMarkAsPending}
+                  disabled={!revertNotes.trim() || updatingCommission === revertModalCommission.id}
+                  className="flex-1 px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-orange-500/30"
+                >
+                  {updatingCommission === revertModalCommission.id ? 'Procesando...' : 'Confirmar Reversión'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Payment Confirmation Modal */}
+        {paymentModalCommission && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4">
+            <div className="bg-gray-900 rounded-xl shadow-2xl max-w-md w-full border-2 border-emerald-500">
+              {/* Header */}
+              <div className="p-6 border-b-2 border-emerald-500 bg-gradient-to-r from-emerald-900/50 to-emerald-800/50">
+                <h3 className="text-2xl font-bold text-white mb-1">Confirmar Pago</h3>
+                <p className="text-emerald-200 text-sm">
+                  Registra los detalles del pago de la comisión
+                </p>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 space-y-5">
+                {/* Commission Info */}
+                <div className="bg-gray-800/70 p-4 rounded-lg border border-gray-700">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-300 text-sm">Monto a pagar:</span>
+                    <span className="text-2xl font-bold text-emerald-400">
+                      ${paymentModalCommission.amount.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    Usuario: {users.find(u => u.id === paymentModalCommission.userId)?.name}
+                  </div>
+                </div>
+
+                {/* Payment Method */}
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-2">
+                    Método de Pago <span className="text-red-400">*</span>
+                  </label>
+                  <div className="grid grid-cols-1 gap-2">
+                    {['Transferencia Bancaria', 'Crypto', 'Efectivo', 'Otro'].map((method) => (
+                      <button
+                        key={method}
+                        onClick={() => setPaymentMethod(method)}
+                        className={`p-3 rounded-lg text-left font-medium transition-all ${
+                          paymentMethod === method
+                            ? 'bg-emerald-600 text-white border-2 border-emerald-400 shadow-lg'
+                            : 'bg-gray-800 text-gray-300 border-2 border-gray-700 hover:border-emerald-500 hover:bg-gray-750'
+                        }`}
+                      >
+                        {method}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Payment Notes */}
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-2">
+                    Observaciones (opcional)
+                  </label>
+                  <textarea
+                    value={paymentNotes}
+                    onChange={(e) => setPaymentNotes(e.target.value)}
+                    placeholder="Ej: Transferencia realizada el 28/01/2026 a cuenta ****1234"
+                    className="w-full px-4 py-3 bg-gray-800 border-2 border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 transition-all"
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-6 border-t-2 border-gray-800 bg-gray-950/50 flex gap-3">
+                <button
+                  onClick={() => setPaymentModalCommission(null)}
+                  className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleMarkAsPaid}
+                  disabled={!paymentMethod.trim() || updatingCommission === paymentModalCommission.id}
+                  className="flex-1 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-500/30"
+                >
+                  {updatingCommission === paymentModalCommission.id ? 'Procesando...' : 'Confirmar Pago'}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1465,7 +1727,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onAddRaffle, raffles, tickets, 
             {activeTab === 'create' && <CreateRaffleForm onAddRaffle={onAddRaffle} />}
             {activeTab === 'stats' && <StatsDashboard raffles={raffles} tickets={tickets} commissions={commissions} users={users} />}
             {activeTab === 'users' && <UserManagement users={users} onUpdateUser={onUpdateUser} onAddNotification={onAddNotification} />}
-            {activeTab === 'network' && <ReferralNetworkStats users={users} tickets={tickets} raffles={raffles} commissions={commissions}/>}
+            {activeTab === 'network' && <ReferralNetworkStats users={users} tickets={tickets} raffles={raffles} commissions={commissions} currentUser={currentUser}/>}
             {activeTab === 'orders' && (
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">

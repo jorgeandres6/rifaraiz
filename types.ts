@@ -98,6 +98,13 @@ export interface Commission {
   sourceUserId: string; // User who MADE the purchase that generated the commission
   raffleId: string;
   date: Date;
+  paymentMethod?: string; // e.g., 'transferencia', 'crypto', 'efectivo'
+  paymentNotes?: string; // Additional payment details
+  paidAt?: Date; // When the commission was marked as paid
+  paidByAdminId?: string; // Admin who marked it as paid
+  revertedAt?: Date; // When the commission was reverted to pending
+  revertedByAdminId?: string; // Admin who reverted it
+  revertNotes?: string; // Reason for reverting to pending
 }
 
 export interface UserPrize {
