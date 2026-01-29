@@ -113,11 +113,25 @@ export type Ticket = {
   [k: string]: any;
 };
 
-function sanitizeForFirestore(obj: any) {
+function sanitizeForFirestore(obj: any): any {
   if (!obj || typeof obj !== 'object') return obj;
+  
+  // Handle arrays
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeForFirestore(item));
+  }
+  
+  // Handle objects
   const out: any = {};
   Object.entries(obj).forEach(([k, v]) => {
-    if (v !== undefined) out[k] = v;
+    if (v !== undefined) {
+      // Recursively sanitize nested objects
+      if (v && typeof v === 'object' && !v.seconds && !v.nanoseconds) {
+        out[k] = sanitizeForFirestore(v);
+      } else {
+        out[k] = v;
+      }
+    }
   });
   return out;
 }
@@ -272,4 +286,49 @@ export const PurchaseOrders = {
   },
 };
 
+// --- RouletteChances helpers ---
+export type RouletteChanceDoc = {
+  userId: string;
+  raffleId: string;
+  chances: number;
+  createdAt?: any;
+  [k: string]: any;
+};
 
+export const RouletteChances = {
+  getAll: (constraints?: QueryConstraint[]) => getCollection<RouletteChanceDoc>("rouletteChances", constraints as any),
+  listen: (onChange: (items: Array<RouletteChanceDoc & { id: string }>) => void, constraints?: QueryConstraint[]) => listenCollection<RouletteChanceDoc>("rouletteChances", onChange, constraints),
+  get: (id: string) => getDocument<RouletteChanceDoc>("rouletteChances", id),
+  add: (data: Partial<RouletteChanceDoc>) => {
+    const prepared = sanitizeForFirestore({ ...data, createdAt: serverTimestamp() });
+    return addDocument<RouletteChanceDoc>("rouletteChances", prepared as RouletteChanceDoc);
+  },
+  update: (id: string, partial: Partial<RouletteChanceDoc>) => {
+    const prepared = sanitizeForFirestore(partial);
+    return updateDocument("rouletteChances", id, prepared as any);
+  },
+  incrementChances: async (userId: string, raffleId: string, amount: number) => {
+    // Find existing chance record
+    const constraints = [where('userId', '==', userId), where('raffleId', '==', raffleId)];
+    const existing = await getCollection<RouletteChanceDoc>("rouletteChances", firestoreQuery(collection(db, "rouletteChances"), ...constraints) as any);
+    
+    if (existing.length > 0) {
+      // Update existing
+      const record = existing[0];
+      await updateDocument("rouletteChances", record.id, { chances: (record.chances || 0) + amount });
+    } else {
+      // Create new
+      await RouletteChances.add({ userId, raffleId, chances: amount });
+    }
+  },
+  decrementChances: async (userId: string, raffleId: string) => {
+    const constraints = [where('userId', '==', userId), where('raffleId', '==', raffleId)];
+    const existing = await getCollection<RouletteChanceDoc>("rouletteChances", firestoreQuery(collection(db, "rouletteChances"), ...constraints) as any);
+    
+    if (existing.length > 0) {
+      const record = existing[0];
+      const newChances = Math.max(0, (record.chances || 0) - 1);
+      await updateDocument("rouletteChances", record.id, { chances: newChances });
+    }
+  },
+};

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { PurchaseOrder, User, Raffle, PurchaseOrderStatus } from '../types';
-import { PurchaseOrders } from '../services/firestore';
+import { PurchaseOrders, RouletteChances } from '../services/firestore';
 import { XIcon, CheckCircleIcon, ExclamationTriangleIcon, DocumentTextIcon, ClockIcon } from './icons';
 
 interface PurchaseOrdersModalProps {
@@ -56,6 +56,9 @@ const PurchaseOrdersModal: React.FC<PurchaseOrdersModalProps> = ({
 
       // Update order in Firestore
       await PurchaseOrders.verify(order.id, ticketIds, currentUser.id);
+
+      // Increment roulette chances for the user based on quantity
+      await RouletteChances.incrementChances(order.userId, order.raffleId, order.quantity);
 
       if (onVerifyOrder) {
         onVerifyOrder(order.id, ticketIds);

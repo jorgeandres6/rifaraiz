@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Ticket, Raffle, User, PurchaseOrder } from '../types';
+import { Ticket, Raffle, User, PurchaseOrder, RouletteChance } from '../types';
 import TransferModal from './TransferModal';
 import TicketDetailModal from './TicketDetailModal';
 import UserPurchaseOrders from './UserPurchaseOrders';
@@ -9,8 +9,10 @@ interface MyTicketsProps {
   raffles: Raffle[];
   users: User[];
   purchaseOrders?: PurchaseOrder[];
+  rouletteChances: RouletteChance[];
   userId: string;
   onTransferTickets: (ticketIds: string[], recipientEmail: string) => Promise<{ success: boolean; message?: string }>;
+  onPlayRoulette?: (raffleId: string) => void;
 }
 
 type DisplayItem = {
@@ -21,8 +23,8 @@ type DisplayItem = {
     tickets: Ticket[];
 }
 
-const MyTickets: React.FC<MyTicketsProps> = ({ tickets, raffles, users, onTransferTickets, purchaseOrders = [], userId }) => {
-  const [activeTab, setActiveTab] = useState<'tickets' | 'orders'>('tickets');
+const MyTickets: React.FC<MyTicketsProps> = ({ tickets, raffles, users, onTransferTickets, purchaseOrders = [], rouletteChances, userId, onPlayRoulette }) => {
+  const [activeTab, setActiveTab] = useState<'tickets' | 'orders' | 'roulette'>('tickets');
   const [isTransferModalOpen, setTransferModalOpen] = useState(false);
   const [isDetailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedRaffle, setSelectedRaffle] = useState<Raffle | null>(null);
@@ -126,6 +128,16 @@ const MyTickets: React.FC<MyTicketsProps> = ({ tickets, raffles, users, onTransf
         >
           Órdenes de Compra ({purchaseOrders.length})
         </button>
+        <button
+          onClick={() => setActiveTab('roulette')}
+          className={`flex-1 py-3 px-4 font-semibold text-center border-b-2 transition ${
+            activeTab === 'roulette'
+              ? 'border-indigo-400 text-indigo-400'
+              : 'border-transparent text-gray-400 hover:text-gray-300'
+          }`}
+        >
+          Oportunidades 🎰
+        </button>
       </div>
 
       {activeTab === 'tickets' ? (
@@ -174,12 +186,49 @@ const MyTickets: React.FC<MyTicketsProps> = ({ tickets, raffles, users, onTransf
             </div>
           )}
         </>
-      ) : (
+      ) : activeTab === 'orders' ? (
         <UserPurchaseOrders
           purchaseOrders={purchaseOrders}
           raffles={raffles}
           userId={userId}
         />
+      ) : (
+        <>
+          <h3 className="text-xl font-semibold text-indigo-400 mb-4">Oportunidades de Ruleta 🎰</h3>
+          {rouletteChances.filter(rc => rc.userId === userId && rc.chances > 0).length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-400 mb-2">No tienes oportunidades disponibles.</p>
+              <p className="text-gray-500 text-sm">Compra boletos y espera a que tu orden sea verificada para acumular oportunidades.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {rouletteChances
+                .filter(rc => rc.userId === userId && rc.chances > 0)
+                .map(rc => {
+                  const raffle = raffles.find(r => r.id === rc.raffleId);
+                  if (!raffle) return null;
+                  return (
+                    <div key={rc.id} className="bg-gray-700/50 p-4 rounded-md">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h4 className="font-bold text-white">{raffle.title}</h4>
+                          <p className="text-sm text-gray-400 mt-1">
+                            Tienes <span className="text-indigo-400 font-bold">{rc.chances}</span> {rc.chances === 1 ? 'oportunidad' : 'oportunidades'} disponibles
+                          </p>
+                        </div>
+                        <button
+                          className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-md font-bold hover:from-purple-700 hover:to-pink-700 transition"
+                          onClick={() => onPlayRoulette && onPlayRoulette(raffle.id)}
+                        >
+                          Jugar 🎰
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+        </>
       )}
       {isTransferModalOpen && selectedRaffle && (
         <TransferModal

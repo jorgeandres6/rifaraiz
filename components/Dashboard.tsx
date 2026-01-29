@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
-import { User, Raffle, Ticket, Commission, UserRole, ExtraPrize, Notification, UserPrize } from '../types';
+import { User, Raffle, Ticket, Commission, UserRole, ExtraPrize, Notification, UserPrize, PurchaseOrder, RouletteChance } from '../types';
+import { RouletteChances } from '../services/firestore';
 import AdminPanel from './AdminPanel';
 import RaffleCard from './RaffleCard';
 import MyTickets from './MyTickets';
@@ -17,6 +18,8 @@ interface DashboardProps {
   commissions: Commission[];
   users: User[];
   userPrizes: UserPrize[];
+  purchaseOrders?: PurchaseOrder[];
+  rouletteChances: RouletteChance[];
   onPurchaseTicket: (raffleId: string, amount: number, totalCost: number) => void;
   onAddRaffle: (newRaffleData: Omit<Raffle, 'id' | 'soldTickets' | 'currentSales'>) => void;
   onTransferTickets: (ticketIds: string[], recipientEmail: string) => { success: boolean; message?: string };
@@ -36,6 +39,8 @@ const Dashboard: React.FC<DashboardProps> = ({
   commissions,
   users,
   userPrizes,
+  purchaseOrders = [],
+  rouletteChances,
   onPurchaseTicket,
   onAddRaffle,
   onTransferTickets,
@@ -51,8 +56,27 @@ const Dashboard: React.FC<DashboardProps> = ({
   if (!currentUser) return null;
 
   const [activeTab, setActiveTab] = useState('buy');
+  const [localRaffleForRoulette, setLocalRaffleForRoulette] = useState<Raffle | null>(null);
   const myTickets = tickets.filter(t => t.userId === currentUser.id);
   const myPrizes = userPrizes.filter(p => p.userId === currentUser.id);
+
+  const handlePlayRoulette = async (raffleId: string) => {
+    const raffle = raffles.find(r => r.id === raffleId);
+    if (raffle) {
+      // Decrement roulette chance before showing modal
+      try {
+        await RouletteChances.decrementChances(currentUser.id, raffleId);
+        setLocalRaffleForRoulette(raffle);
+      } catch (error) {
+        console.error('Error decrementing roulette chances:', error);
+        alert('No tienes oportunidades disponibles para esta rifa');
+      }
+    }
+  };
+
+  const handleCloseLocalRoulette = async () => {
+    setLocalRaffleForRoulette(null);
+  };
 
   const getTabClass = (tabName: string) => {
     return `whitespace-nowrap flex items-center shrink-0 py-3 px-4 border-b-2 font-medium text-sm transition-colors ${
@@ -113,8 +137,12 @@ const Dashboard: React.FC<DashboardProps> = ({
           <MyTickets 
             tickets={myTickets} 
             raffles={raffles} 
-            users={users} 
-            onTransferTickets={onTransferTickets} 
+            users={users}
+            purchaseOrders={purchaseOrders}
+            rouletteChances={rouletteChances}
+            userId={currentUser.id}
+            onTransferTickets={onTransferTickets}
+            onPlayRoulette={handlePlayRoulette}
           />
         );
       case 'rewards':
@@ -242,6 +270,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           commissions={commissions} 
           users={users}
           userPrizes={userPrizes}
+          purchaseOrders={purchaseOrders}
           onUpdateUser={onUpdateUser}
           onUpdateRaffle={onUpdateRaffle}
           currentUser={currentUser}
@@ -285,6 +314,14 @@ const Dashboard: React.FC<DashboardProps> = ({
             raffle={raffleForRoulette}
             onPrizeWon={onPrizeWon}
             onClose={onCloseRoulette}
+        />
+      )}
+
+      {localRaffleForRoulette && (
+        <RouletteModal
+            raffle={localRaffleForRoulette}
+            onPrizeWon={onPrizeWon}
+            onClose={handleCloseLocalRoulette}
         />
       )}
     </div>

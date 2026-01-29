@@ -122,6 +122,14 @@ export interface Notification {
   read: boolean;
 }
 
+export interface RouletteChance {
+  id: string;
+  userId: string;
+  raffleId: string;
+  chances: number; // Number of spins available
+  createdAt: Date;
+}
+
 export interface PurchaseOrder {
   id: string;
   userId: string; // Who made the purchase

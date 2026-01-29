@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { User, Raffle, Ticket, Commission, UserRole, CommissionStatus, ExtraPrize, UserPrize, Notification } from './types';
+import { User, Raffle, Ticket, Commission, UserRole, CommissionStatus, ExtraPrize, UserPrize, Notification, PurchaseOrder, RouletteChance } from './types';
 import Dashboard from './components/Dashboard';
 import AuthPage from './pages/AuthPage';
 import Header from './components/Header';
@@ -9,7 +9,7 @@ import SettingsModal from './components/SettingsModal';
 import Toasts, { Toast } from './components/Toasts';
 
 // Firestore helpers
-import { Raffles, Tickets, Commissions, Users, UserPrizes, setDocument, updateDocument, serverTimestamp } from './services/firestore';
+import { Raffles, Tickets, Commissions, Users, UserPrizes, PurchaseOrders, RouletteChances, setDocument, updateDocument, serverTimestamp } from './services/firestore';
 
 const App: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -20,6 +20,8 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [raffleForRoulette, setRaffleForRoulette] = useState<Raffle | null>(null);
   const [userPrizes, setUserPrizes] = useState<UserPrize[]>([]);
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
+  const [rouletteChances, setRouletteChances] = useState<RouletteChance[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   
@@ -117,6 +119,8 @@ const App: React.FC = () => {
     let commissionsUnsub: (() => void) | null = null;
     let usersUnsub: (() => void) | null = null;
     let userPrizesUnsub: (() => void) | null = null;
+    let purchaseOrdersUnsub: (() => void) | null = null;
+    let rouletteChancesUnsub: (() => void) | null = null;
 
     try {
       rafflesUnsub = Raffles.listen((items: any[]) => {
@@ -165,6 +169,24 @@ const App: React.FC = () => {
         setUserPrizes(parsed);
       });
 
+      purchaseOrdersUnsub = PurchaseOrders.listen((items: any[]) => {
+        const parsed = items.map((po: any) => ({
+          ...po,
+          createdAt: po.createdAt && typeof po.createdAt === 'object' && typeof po.createdAt.toDate === 'function' ? po.createdAt.toDate() : po.createdAt,
+          paidAt: po.paidAt && typeof po.paidAt === 'object' && typeof po.paidAt.toDate === 'function' ? po.paidAt.toDate() : po.paidAt,
+          verifiedAt: po.verifiedAt && typeof po.verifiedAt === 'object' && typeof po.verifiedAt.toDate === 'function' ? po.verifiedAt.toDate() : po.verifiedAt,
+        }));
+        setPurchaseOrders(parsed);
+      });
+
+      rouletteChancesUnsub = RouletteChances.listen((items: any[]) => {
+        const parsed = items.map((rc: any) => ({
+          ...rc,
+          createdAt: rc.createdAt && typeof rc.createdAt === 'object' && typeof rc.createdAt.toDate === 'function' ? rc.createdAt.toDate() : rc.createdAt,
+        }));
+        setRouletteChances(parsed);
+      });
+
       console.log('Firestore listeners initialized');
     } catch (err) {
       console.error('Error initializing Firestore listeners:', err);
@@ -177,6 +199,8 @@ const App: React.FC = () => {
       if (commissionsUnsub) commissionsUnsub();
       if (usersUnsub) usersUnsub();
       if (userPrizesUnsub) userPrizesUnsub();
+      if (purchaseOrdersUnsub) purchaseOrdersUnsub();
+      if (rouletteChancesUnsub) rouletteChancesUnsub();
     };
   }, []);
 
@@ -469,148 +493,51 @@ const App: React.FC = () => {
       return;
     }
 
-    const purchasedPackInfo = raffle.ticketPacks?.find(p => p.quantity === amount && Math.abs(p.price - totalCost) < 0.005); // match floats with tolerance (2 decimals)
+    const purchasedPackInfo = raffle.ticketPacks?.find(p => p.quantity === amount && Math.abs(p.price - totalCost) < 0.005);
 
-    const newTickets: Ticket[] = [];
-    const purchaseDate = new Date();
-    for (let i = 0; i < amount; i++) {
-      let ticketNum = `${currentUser.referralCode}-${raffle.soldTickets + i + 1}`;
-      if (purchasedPackInfo?.isFidelityPack) {
-          ticketNum += "F";
-      }
+    // Create a purchase order instead of creating tickets directly
+    const newPurchaseOrder: PurchaseOrder = {
+      id: `po_${Date.now()}`,
+      userId: currentUser.id,
+      raffleId: raffleId,
+      packId: purchasedPackInfo ? `pack_${purchasedPackInfo.quantity}_${purchasedPackInfo.price}` : undefined,
+      quantity: amount,
+      totalPrice: totalCost,
+      status: 'PENDING' as any,
+      createdAt: new Date(),
+    };
 
-      newTickets.push({
-        id: `t${Date.now()}${i}`,
-        raffleId,
-        userId: currentUser.id,
-        purchaseDate: purchaseDate,
-        ticketNumber: ticketNum,
-        originalUserId: currentUser.id,
-        transferCount: 0,
-        purchasedPackInfo: purchasedPackInfo ? {
-            quantity: purchasedPackInfo.quantity,
-            price: purchasedPackInfo.price,
-            participationBonusPercent: purchasedPackInfo.participationBonusPercent
-        } : undefined,
-      });
-    }
+    // Update local state
+    setPurchaseOrders(prev => [...prev, newPurchaseOrder]);
 
-    setTickets(prev => [...prev, ...newTickets]);
-    
-    // Update raffle sales and handle Fidelity Pack Logic
-    setRaffles(prev => prev.map(r => {
-        if (r.id === raffleId) {
-            const updatedRaffle = { ...r, soldTickets: r.soldTickets + amount, currentSales: r.currentSales + totalCost };
-            
-            // Fidelity Access Logic: If purchasing a Fidelity Pack, add user to associatedBusinesses
-            if (purchasedPackInfo?.isFidelityPack) {
-                const currentAssociations = r.associatedBusinesses || [];
-                // Check if user is already associated to avoid duplicates
-                if (!currentAssociations.includes(currentUser.name)) {
-                    updatedRaffle.associatedBusinesses = [...currentAssociations, currentUser.name];
-                    
-                    // Add notification for fidelity access
-                    setNotifications(prevNotifs => [{
-                        id: `nf${Date.now()}`,
-                        userId: currentUser.id,
-                        title: '¡Acceso Fidelity Activado!',
-                        message: `Has desbloqueado el acceso a la versión Fidelity de la rifa "${r.title}" por tu compra del pack especial.`,
-                        date: new Date(),
-                        read: false
-                    }, ...prevNotifs]);
-                }
-            }
-            return updatedRaffle;
-        }
-        return r;
-    }));
-    
-    // Commission logic using the new `upline` array for efficiency
-    const uplineIds = currentUser.upline || [];
-    const commissionLevels = [
-        { level: 1, rate: 0.20, userId: uplineIds[0] },
-        { level: 2, rate: 0.10, userId: uplineIds[1] },
-        { level: 3, rate: 0.05, userId: uplineIds[2] },
-    ];
-
-    const newCommissions: Commission[] = [];
-    commissionLevels.forEach(({ level, rate, userId }) => {
-        if (userId) {
-            const commissionAmount = totalCost * rate;
-            newCommissions.push({
-                id: `c${Date.now()}${level}`,
-                userId: userId,
-                amount: commissionAmount,
-                status: CommissionStatus.PENDING,
-                level,
-                sourceUserId: currentUser.id,
-                raffleId,
-                date: purchaseDate
-            });
-            
-            // Notification for commission
-            setNotifications(prev => [{
-                id: `nc${Date.now()}${level}`,
-                userId: userId,
-                title: 'Comisión Recibida',
-                message: `Has recibido $${commissionAmount.toFixed(2)} de comisión por una compra en tu red.`,
-                date: new Date(),
-                read: false
-            }, ...prev]);
-        }
-    });
-
-    if (newCommissions.length > 0) {
-        setCommissions(prev => [...prev, ...newCommissions]);
-
-        const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
-        if (firebaseConfigured) {
-          try {
-            const commsForDb = newCommissions.map(c => ({
-              userId: c.userId,
-              amount: c.amount,
-              status: c.status,
-              level: c.level,
-              sourceUserId: c.sourceUserId,
-              raffleId: c.raffleId,
-              date: serverTimestamp(),
-            }));
-            await Commissions.addBatch(commsForDb);
-          } catch (err) {
-            console.error('Error saving commissions to Firestore:', err);
-            showToast('Error guardando comisiones en Firestore. Revisa la consola para más detalles.', 'error');
-          }
-        }
-    }
-
-    // Trigger roulette if the raffle has extra prizes
-    const purchasedRaffle = raffles.find(r => r.id === raffleId);
-    if (purchasedRaffle?.extraPrizes && purchasedRaffle.extraPrizes.length > 0) {
-      setRaffleForRoulette(purchasedRaffle);
-    }
-
-    // Persist tickets and raffle changes to Firestore (best-effort)
+    // Save to Firestore
     try {
-      // Map tickets to Firestore-friendly objects (omit local-only ids if needed)
-      const ticketsForDb = newTickets.map(t => {
-        const base: any = {
-          raffleId: t.raffleId,
-          userId: t.userId,
-          ticketNumber: t.ticketNumber,
-          originalUserId: t.originalUserId,
-          transferCount: t.transferCount,
-        };
-        if (t.purchasedPackInfo !== undefined) {
-          base.purchasedPackInfo = t.purchasedPackInfo;
-        }
-        return base;
-      });
-
-      await Tickets.addBatch(ticketsForDb);
-      await Raffles.incrementSales(raffleId, amount, totalCost);
+      const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
+      if (firebaseConfigured) {
+        await PurchaseOrders.add({
+          userId: currentUser.id,
+          raffleId: raffleId,
+          packId: purchasedPackInfo ? `pack_${purchasedPackInfo.quantity}_${purchasedPackInfo.price}` : undefined,
+          quantity: amount,
+          totalPrice: totalCost,
+        });
+      }
+      
+      showToast(`Orden de compra creada. Espera la verificación del administrador.`, 'success');
+      
+      // Notification for user
+      setNotifications(prev => [{
+        id: `no${Date.now()}`,
+        userId: currentUser.id,
+        title: 'Orden de Compra Creada',
+        message: `Tu orden de ${amount} boleto(s) por $${totalCost.toFixed(2)} ha sido creada. Un administrador la revisará pronto.`,
+        date: new Date(),
+        read: false
+      }, ...prev]);
+      
     } catch (err) {
-      console.error('Error saving purchase to Firestore:', err);
-      showToast('Error saving purchase to Firestore. Revisa la consola para más detalles.', 'error');
+      console.error('Error creating purchase order:', err);
+      showToast('Error al crear la orden de compra. Revisa la consola para más detalles.', 'error');
     }
   };
 
@@ -964,6 +891,8 @@ const App: React.FC = () => {
           commissions={commissions}
           users={users}
           userPrizes={userPrizes}
+          purchaseOrders={purchaseOrders}
+          rouletteChances={rouletteChances}
           onPurchaseTicket={handlePurchaseTicket}
           onAddRaffle={handleAddRaffle}
           onTransferTickets={handleTransferTickets}
