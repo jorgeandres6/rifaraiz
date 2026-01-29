@@ -30,18 +30,24 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle, onPurchase, hasActiveTi
     }
   };
 
-  const publicGoalAmount = raffle.salesGoal * (raffle.goalThresholdPercent / 100);
+  const publicGoalAmount = raffle.salesGoal && raffle.goalThresholdPercent 
+    ? raffle.salesGoal * (raffle.goalThresholdPercent / 100)
+    : undefined;
   const actualSalesAmount = raffle.currentSales;
 
   // The raffle is considered ready when actual sales reach the public goal amount.
-  const isGoalReached = actualSalesAmount >= publicGoalAmount;
+  const isGoalReached = publicGoalAmount && actualSalesAmount >= publicGoalAmount;
 
   // Per user request, the displayed current sales are a proportion of the actual sales.
-  const displayedCurrentSales = actualSalesAmount * (raffle.goalThresholdPercent / 100);
+  const displayedCurrentSales = publicGoalAmount && raffle.goalThresholdPercent
+    ? actualSalesAmount * (raffle.goalThresholdPercent / 100)
+    : undefined;
   
   // To keep the displayed text and progress bar visually consistent, the percentage
   // is calculated as the ratio of actual sales to the total sales goal.
-  const progressPercent = raffle.salesGoal > 0 ? Math.min((actualSalesAmount / raffle.salesGoal) * 100, 100) : 0;
+  const progressPercent = raffle.salesGoal && raffle.salesGoal > 0 
+    ? Math.min((actualSalesAmount / raffle.salesGoal) * 100, 100)
+    : undefined;
 
   // Special rendering for Fidelity Raffle
   if (raffle.isFidelity) {
@@ -151,20 +157,24 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle, onPurchase, hasActiveTi
            <div className="flex items-center text-gray-300">
             <CurrencyDollarIcon className="h-5 w-5 mr-2 text-indigo-400" />
             <span>Precio: ${raffle.ticketPrice.toFixed(2)} / boleto</span>
-            <div className="flex justify-between mb-1 text-gray-300 font-medium">
-                <span>Meta para la rifa</span>
-                <span>${displayedCurrentSales.toLocaleString()} / ${publicGoalAmount.toLocaleString()}</span>
-            </div>
-            <div className="w-full bg-gray-700 rounded-full h-2.5">
-                <div 
-                    className="bg-indigo-500 h-2.5 rounded-full transition-all duration-500" 
-                    style={{ width: `${progressPercent}%` }}>
-                </div>
-            </div>
-            {isGoalReached && (
-                 <p className="text-center text-xs mt-2 font-semibold text-green-400">¡Meta alcanzada! El sorteo se realizará pronto.</p>
-            )}
           </div>
+          {publicGoalAmount !== undefined && displayedCurrentSales !== undefined && progressPercent !== undefined && (
+            <div>
+              <div className="flex justify-between mb-1 text-gray-300 font-medium">
+                  <span>Meta para la rifa</span>
+                  <span>${displayedCurrentSales.toLocaleString()} / ${publicGoalAmount.toLocaleString()}</span>
+              </div>
+              <div className="w-full bg-gray-700 rounded-full h-2.5">
+                  <div 
+                      className="bg-indigo-500 h-2.5 rounded-full transition-all duration-500" 
+                      style={{ width: `${progressPercent}%` }}>
+                  </div>
+              </div>
+              {isGoalReached && (
+                   <p className="text-center text-xs mt-2 font-semibold text-green-400">¡Meta alcanzada! El sorteo se realizará pronto.</p>
+              )}
+            </div>
+          )}
         </div>
       </div>
       

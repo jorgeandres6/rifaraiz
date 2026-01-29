@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { MailIcon, LockClosedIcon, UserCircleIcon, PhoneIcon, MapPinIcon } from './icons';
-import { BankAccount, CryptoWallet } from '../types';
 
 interface SignupFormProps {
-    onSignup: (name: string, email: string, pass: string, phone: string, city: string, referralCode?: string, country?: string, bankAccount?: BankAccount | null, cryptoWallet?: CryptoWallet | null) => Promise<{ success: boolean; message?: string }>;
+    onSignup: (name: string, email: string, pass: string, phone: string, city: string, referralCode?: string, country?: string) => Promise<{ success: boolean; message?: string }>;
     toggleView: () => void;
     initialReferral?: string;
 }
@@ -16,17 +15,6 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSignup, toggleView, initialRe
     const [city, setCity] = useState('');
     const [referralCode, setReferralCode] = useState(initialReferral || '');
     const [country, setCountry] = useState('');
-    const [paymentMethod, setPaymentMethod] = useState<'bank' | 'crypto'>('bank');
-
-    // Bank fields
-    const [bankName, setBankName] = useState('');
-    const [accountType, setAccountType] = useState<'ahorro' | 'corriente'>('ahorro');
-    const [idNumber, setIdNumber] = useState('');
-    const [accountNumber, setAccountNumber] = useState('');
-
-    // Crypto fields
-    const [walletAddress, setWalletAddress] = useState('');
-    const [walletNetwork, setWalletNetwork] = useState('');
 
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -43,33 +31,10 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSignup, toggleView, initialRe
             setError('La contraseña debe tener al menos 6 caracteres.');
             return;
         }
-        // Require a payment method
-        if (paymentMethod !== 'bank' && paymentMethod !== 'crypto') {
-            setError('Por favor selecciona un método de pago.');
-            return;
-        }
-
-        // Validate payment fields depending on method
-        if (paymentMethod === 'bank') {
-            if (!bankName || !idNumber || !accountNumber) {
-                setError('Por favor completa los datos bancarios requeridos.');
-                return;
-            }
-        }
-
-        if (paymentMethod === 'crypto') {
-            if (!walletAddress || !walletNetwork) {
-                setError('Por favor completa los datos de billetera criptográfica.');
-                return;
-            }
-        }
 
         setLoading(true);
         try {
-            const bankAccount = paymentMethod === 'bank' ? { bankName, accountType, idNumber, accountNumber } : null;
-            const cryptoWallet = paymentMethod === 'crypto' ? { address: walletAddress, network: walletNetwork } : null;
-
-            const result = await onSignup(name, email, password, phone, city, referralCode, country, bankAccount, cryptoWallet);
+            const result = await onSignup(name, email, password, phone, city, referralCode, country);
             if (!result.success) {
                 setError(result.message || 'No se pudo crear la cuenta.');
             }
@@ -136,56 +101,6 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSignup, toggleView, initialRe
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-300">Método de Pago</label>
-                <div className="mt-1 flex gap-4 items-center">
-                    <label className="inline-flex items-center gap-2">
-                        <input type="radio" name="payment" checked={paymentMethod === 'bank'} onChange={() => setPaymentMethod('bank')} />
-                        <span className="text-sm text-gray-300">Cuenta Bancaria</span>
-                    </label>
-                    <label className="inline-flex items-center gap-2">
-                        <input type="radio" name="payment" checked={paymentMethod === 'crypto'} onChange={() => setPaymentMethod('crypto')} />
-                        <span className="text-sm text-gray-300">Billetera Crypto</span>
-                    </label>
-                </div>
-            </div>
-
-            {paymentMethod === 'bank' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300">Banco / Cooperativa</label>
-                        <input type="text" value={bankName} onChange={(e) => setBankName(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-3 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Nombre del banco" />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300">Tipo de Cuenta</label>
-                        <select value={accountType} onChange={(e) => setAccountType(e.target.value as any)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-3 focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="ahorro">Ahorros</option>
-                            <option value="corriente">Corriente</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300">Cédula / RUC</label>
-                        <input type="text" value={idNumber} onChange={(e) => setIdNumber(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-3 focus:ring-indigo-500 focus:border-indigo-500" placeholder="1234567890" />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300">Número de Cuenta</label>
-                        <input type="text" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-3 focus:ring-indigo-500 focus:border-indigo-500" placeholder="000123456789" />
-                    </div>
-                </div>
-            )}
-
-            {paymentMethod === 'crypto' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300">Número de Billetera</label>
-                        <input type="text" value={walletAddress} onChange={(e) => setWalletAddress(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-3 focus:ring-indigo-500 focus:border-indigo-500" placeholder="0x..." />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300">Red</label>
-                        <input type="text" value={walletNetwork} onChange={(e) => setWalletNetwork(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-3 focus:ring-indigo-500 focus:border-indigo-500" placeholder="BSC / ETH / TRX" />
-                    </div>
-                </div>
-            )}
-             <div>
                 <label htmlFor="referral-signup" className="block text-sm font-medium text-gray-300">Código de Referido (Opcional)</label>
                 <input type="text" id="referral-signup" value={referralCode} onChange={(e) => setReferralCode(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-3 focus:ring-indigo-500 focus:border-indigo-500" placeholder="CÓDIGO123" />
             </div>

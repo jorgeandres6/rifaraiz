@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { User, Raffle, Ticket, Commission, UserRole, ExtraPrize, Notification } from '../types';
+import { User, Raffle, Ticket, Commission, UserRole, ExtraPrize, Notification, UserPrize } from '../types';
 import AdminPanel from './AdminPanel';
 import RaffleCard from './RaffleCard';
 import MyTickets from './MyTickets';
@@ -16,15 +16,17 @@ interface DashboardProps {
   tickets: Ticket[];
   commissions: Commission[];
   users: User[];
+  userPrizes: UserPrize[];
   onPurchaseTicket: (raffleId: string, amount: number, totalCost: number) => void;
   onAddRaffle: (newRaffleData: Omit<Raffle, 'id' | 'soldTickets' | 'currentSales'>) => void;
   onTransferTickets: (ticketIds: string[], recipientEmail: string) => { success: boolean; message?: string };
   onUpdateUser: (updatedUser: User) => void;
   onUpdateRaffle: (updatedRaffle: Raffle) => void;
   raffleForRoulette: Raffle | null;
-  onPrizeWon: (prize: ExtraPrize, raffleId: string) => void;
+  onPrizeWon: (prize: ExtraPrize, raffleId: string) => Promise<void>;
   onCloseRoulette: () => void;
   onAddNotification: (notification: Omit<Notification, 'id' | 'date' | 'read'>) => void;
+  onRedeemPrize?: (prizeId: string, code: string) => boolean;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({
@@ -33,6 +35,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   tickets,
   commissions,
   users,
+  userPrizes,
   onPurchaseTicket,
   onAddRaffle,
   onTransferTickets,
@@ -42,12 +45,14 @@ const Dashboard: React.FC<DashboardProps> = ({
   onPrizeWon,
   onCloseRoulette,
   onAddNotification,
+  onRedeemPrize,
 }) => {
   // Defensive: wait for currentUser to be set before operating on user-specific data
   if (!currentUser) return null;
 
   const [activeTab, setActiveTab] = useState('buy');
   const myTickets = tickets.filter(t => t.userId === currentUser.id);
+  const myPrizes = userPrizes.filter(p => p.userId === currentUser.id);
 
   const getTabClass = (tabName: string) => {
     return `whitespace-nowrap flex items-center shrink-0 py-3 px-4 border-b-2 font-medium text-sm transition-colors ${
@@ -138,6 +143,81 @@ const Dashboard: React.FC<DashboardProps> = ({
                   currentUser={currentUser}
               />
           );
+      case 'prizes':
+          return (
+              <div>
+                  <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl mb-6">Mis Premios Ganados</h2>
+                  {myPrizes.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {myPrizes.map(prize => {
+                              const raffle = raffles.find(r => r.id === prize.raffleId);
+                              const isRedeemed = prize.redeemed || false;
+                              
+                              return (
+                                  <div 
+                                      key={prize.id} 
+                                      className={`rounded-lg shadow-xl overflow-hidden border ring-1 transition-all ${
+                                          isRedeemed 
+                                              ? 'bg-gradient-to-br from-gray-700 to-gray-800 border-gray-600 ring-gray-600/20 opacity-75'
+                                              : 'bg-gradient-to-br from-yellow-900/40 to-amber-900/40 border-yellow-500/30 ring-yellow-500/20'
+                                      }`}
+                                  >
+                                      <div className="p-6">
+                                          <div className="flex items-start justify-between mb-4">
+                                              <div className="flex-grow">
+                                                  <h3 className={`text-lg font-bold ${isRedeemed ? 'text-gray-400' : 'text-yellow-400'}`}>
+                                                      {prize.prizeName}
+                                                  </h3>
+                                                  <p className={`text-sm mt-1 ${isRedeemed ? 'text-gray-500' : 'text-gray-400'}`}>
+                                                      De: {raffle?.title || 'Rifa desconocida'}
+                                                  </p>
+                                              </div>
+                                              <div className={`rounded-full p-2 flex-shrink-0 ${isRedeemed ? 'bg-gray-600/30' : 'bg-yellow-500/20'}`}>
+                                                  <GiftIcon className={`h-6 w-6 ${isRedeemed ? 'text-gray-500' : 'text-yellow-400'}`} />
+                                              </div>
+                                          </div>
+                                          <div className={`border-t pt-4 mt-4 ${isRedeemed ? 'border-gray-600' : 'border-yellow-500/20'}`}>
+                                              <p className={`text-xs uppercase tracking-wide mb-1 ${isRedeemed ? 'text-gray-600' : 'text-gray-500'}`}>
+                                                  {isRedeemed ? 'Canjeado' : 'Fecha de Premio'}
+                                              </p>
+                                              <p className={`text-sm font-medium ${isRedeemed ? 'text-gray-400' : 'text-yellow-300'}`}>
+                                                  {isRedeemed && prize.redeemedDate
+                                                      ? prize.redeemedDate.toLocaleDateString('es-ES', {
+                                                          year: 'numeric',
+                                                          month: 'long',
+                                                          day: 'numeric',
+                                                          hour: '2-digit',
+                                                          minute: '2-digit'
+                                                      })
+                                                      : prize.dateWon.toLocaleDateString('es-ES', {
+                                                          year: 'numeric',
+                                                          month: 'long',
+                                                          day: 'numeric',
+                                                          hour: '2-digit',
+                                                          minute: '2-digit'
+                                                      })
+                                                  }
+                                              </p>
+                                          </div>
+                                          {isRedeemed && (
+                                              <div className="w-full mt-4 px-4 py-2 bg-gray-600 text-gray-300 font-medium text-sm rounded-md text-center">
+                                                  ✓ Canjeado
+                                              </div>
+                                          )}
+                                      </div>
+                                  </div>
+                              );
+                          })}
+                      </div>
+                  ) : (
+                      <div className="text-center py-12">
+                          <GiftIcon className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+                          <p className="text-gray-400 text-lg">No has ganado premios aún</p>
+                          <p className="text-gray-500 text-sm mt-2">¡Compra boletos y gira la ruleta para ganar premios!</p>
+                      </div>
+                  )}
+              </div>
+          );
       default:
         return null;
     }
@@ -153,10 +233,12 @@ const Dashboard: React.FC<DashboardProps> = ({
           tickets={tickets} 
           commissions={commissions} 
           users={users}
+          userPrizes={userPrizes}
           onUpdateUser={onUpdateUser}
           onUpdateRaffle={onUpdateRaffle}
           currentUser={currentUser}
           onAddNotification={onAddNotification}
+          onRedeemPrize={onRedeemPrize || (() => false)}
         />
       )}
 
@@ -170,6 +252,10 @@ const Dashboard: React.FC<DashboardProps> = ({
             <button onClick={() => setActiveTab('tickets')} className={getTabClass('tickets')}>
                 <TicketIcon className="h-5 w-5 mr-2" />
                 Mis Boletos
+            </button>
+            <button onClick={() => setActiveTab('prizes')} className={getTabClass('prizes')}>
+                <GiftIcon className="h-5 w-5 mr-2" />
+                Mis Premios
             </button>
             <button onClick={() => setActiveTab('rewards')} className={getTabClass('rewards')}>
                 <GiftIcon className="h-5 w-5 mr-2" />

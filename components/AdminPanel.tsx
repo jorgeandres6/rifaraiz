@@ -1,12 +1,13 @@
 
 import React, { useState, useMemo } from 'react';
-import { Raffle, Ticket, Commission, User, UserRole, TicketPack, Notification } from '../types';
+import { Raffle, Ticket, Commission, User, UserRole, TicketPack, Notification, UserPrize } from '../types';
 import { generateRaffleContent } from '../services/geminiService';
 import { Users } from '../services/firestore';
 import { SparklesIcon, PlusCircleIcon, TicketIcon, CurrencyDollarIcon, ClipboardListIcon, GiftIcon, DocumentChartBarIcon, UsersIcon, PencilIcon, XIcon, ShareIcon, TrophyIcon, InformationCircleIcon, MailIcon, PaperAirplaneIcon, BuildingStoreIcon, LockClosedIcon } from './icons';
 import ReportModal from './ReportModal';
 import LeaderboardsPage from './LeaderboardsPage';
 import EditRaffleModal from './EditRaffleModal';
+import AdminPrizeRedemptionModal from './AdminPrizeRedemptionModal';
 
 
 interface AdminPanelProps {
@@ -16,9 +17,11 @@ interface AdminPanelProps {
     tickets: Ticket[];
     commissions: Commission[];
     users: User[];
+    userPrizes: UserPrize[];
     onUpdateUser: (updatedUser: User) => void;
     currentUser: User;
     onAddNotification: (notification: Omit<Notification, 'id' | 'date' | 'read'>) => void;
+    onRedeemPrize: (prizeId: string, code: string) => boolean;
 }
 
 const CreateRaffleForm: React.FC<{ onAddRaffle: AdminPanelProps['onAddRaffle'] }> = ({ onAddRaffle }) => {
@@ -26,8 +29,8 @@ const CreateRaffleForm: React.FC<{ onAddRaffle: AdminPanelProps['onAddRaffle'] }
     const [description, setDescription] = useState('');
     const [prizeInfo, setPrizeInfo] = useState('');
     const [ticketPrice, setTicketPrice] = useState(10);
-    const [salesGoal, setSalesGoal] = useState(2000);
-    const [goalThresholdPercent, setGoalThresholdPercent] = useState(80);
+    const [salesGoal, setSalesGoal] = useState('');
+    const [goalThresholdPercent, setGoalThresholdPercent] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [packs, setPacks] = useState<{ quantity: string; price: string; participationBonusPercent: string; isFidelityPack: boolean }[]>([{ quantity: '', price: '', participationBonusPercent: '', isFidelityPack: false }]);
     const [successMessage, setSuccessMessage] = useState('');
@@ -100,8 +103,8 @@ const CreateRaffleForm: React.FC<{ onAddRaffle: AdminPanelProps['onAddRaffle'] }
             description,
             prizeInfo,
             ticketPrice: Math.round(Number(ticketPrice) * 100) / 100,
-            salesGoal: Number(salesGoal),
-            goalThresholdPercent: Number(goalThresholdPercent),
+            salesGoal: salesGoal ? Number(salesGoal) : undefined,
+            goalThresholdPercent: goalThresholdPercent ? Number(goalThresholdPercent) : undefined,
             ticketPacks,
         };
         onAddRaffle(newRaffle);
@@ -114,8 +117,8 @@ const CreateRaffleForm: React.FC<{ onAddRaffle: AdminPanelProps['onAddRaffle'] }
         setDescription('');
         setPrizeInfo('');
         setTicketPrice(10);
-        setSalesGoal(2000);
-        setGoalThresholdPercent(80);
+        setSalesGoal('');
+        setGoalThresholdPercent('');
         setPacks([{ quantity: '', price: '', participationBonusPercent: '', isFidelityPack: false }]);
     };
     
@@ -160,12 +163,12 @@ const CreateRaffleForm: React.FC<{ onAddRaffle: AdminPanelProps['onAddRaffle'] }
                     <input type="number" id="ticketPrice" step="0.01" value={ticketPrice} onChange={(e) => setTicketPrice(Number(e.target.value))} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" min="0.01" />
                 </div>
                 <div>
-                    <label htmlFor="salesGoal" className="block text-sm font-medium text-gray-300">Meta de Ventas ($)</label>
-                    <input type="number" id="salesGoal" value={salesGoal} onChange={(e) => setSalesGoal(Number(e.target.value))} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" min="1" />
+                    <label htmlFor="salesGoal" className="block text-sm font-medium text-gray-300">Meta de Ventas ($) <span className="text-xs text-gray-500">(opcional)</span></label>
+                    <input type="number" id="salesGoal" value={salesGoal} onChange={(e) => setSalesGoal(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" min="1" />
                 </div>
                 <div>
-                    <label htmlFor="goalThresholdPercent" className="block text-sm font-medium text-gray-300">Meta a Mostrar (%)</label>
-                    <input type="number" id="goalThresholdPercent" value={goalThresholdPercent} onChange={(e) => setGoalThresholdPercent(Number(e.target.value))} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" min="1" max="100" />
+                    <label htmlFor="goalThresholdPercent" className="block text-sm font-medium text-gray-300">Meta a Mostrar (%) <span className="text-xs text-gray-500">(opcional)</span></label>
+                    <input type="number" id="goalThresholdPercent" value={goalThresholdPercent} onChange={(e) => setGoalThresholdPercent(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500" min="1" max="100" />
                 </div>
             </div>
 
@@ -1186,10 +1189,11 @@ const ManageRafflesList: React.FC<{ raffles: Raffle[], onEdit: (raffle: Raffle) 
 );
 
 
-const AdminPanel: React.FC<AdminPanelProps> = ({ onAddRaffle, raffles, tickets, commissions, users, onUpdateUser, onUpdateRaffle, currentUser, onAddNotification }) => {
+const AdminPanel: React.FC<AdminPanelProps> = ({ onAddRaffle, raffles, tickets, commissions, users, onUpdateUser, onUpdateRaffle, currentUser, onAddNotification, userPrizes, onRedeemPrize }) => {
     const [activeTab, setActiveTab] = useState('stats');
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [raffleToEdit, setRaffleToEdit] = useState<Raffle | null>(null);
+    const [isRedemptionModalOpen, setIsRedemptionModalOpen] = useState(false);
 
     const handleEditRaffle = (raffle: Raffle) => {
         setRaffleToEdit(raffle);
@@ -1224,6 +1228,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onAddRaffle, raffles, tickets, 
                     <TrophyIcon className="h-5 w-5 mr-2" />
                     Leaderboards
                 </button>
+                <button onClick={() => setActiveTab('prizes')} className={getTabClass('prizes')}>
+                    <GiftIcon className="h-5 w-5 mr-2" />
+                    Canjear Premios
+                </button>
                 <button onClick={() => setActiveTab('users')} className={getTabClass('users')}>
                     Administrar Usuarios
                 </button>
@@ -1239,6 +1247,22 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onAddRaffle, raffles, tickets, 
             {activeTab === 'stats' && <StatsDashboard raffles={raffles} tickets={tickets} commissions={commissions} users={users} />}
             {activeTab === 'users' && <UserManagement users={users} onUpdateUser={onUpdateUser} onAddNotification={onAddNotification} />}
             {activeTab === 'network' && <ReferralNetworkStats users={users} tickets={tickets} raffles={raffles}/>}
+            {activeTab === 'prizes' && (
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h3 className="text-xl font-bold text-white">Canjear Premios</h3>
+                            <p className="text-gray-400 text-sm mt-1">Total de premios sin canjear: {userPrizes.filter(p => !p.redeemed).length}</p>
+                        </div>
+                        <button
+                            onClick={() => setIsRedemptionModalOpen(true)}
+                            className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 px-4 rounded transition-colors"
+                        >
+                            Abrir Modal de Canje
+                        </button>
+                    </div>
+                </div>
+            )}
             {activeTab === 'manage' && <ManageRafflesList raffles={raffles} onEdit={handleEditRaffle} />}
             {activeTab === 'leaderboards' && (
                 <LeaderboardsPage
@@ -1257,6 +1281,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onAddRaffle, raffles, tickets, 
                     users={users}
                 />
             )}
+
+            <AdminPrizeRedemptionModal
+                isOpen={isRedemptionModalOpen}
+                onClose={() => setIsRedemptionModalOpen(false)}
+                userPrizes={userPrizes}
+                users={users}
+                onRedeemPrize={onRedeemPrize}
+            />
         </div>
     );
 };

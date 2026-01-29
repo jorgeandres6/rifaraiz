@@ -63,7 +63,8 @@ const playLoseSound = (ctx: AudioContext) => {
 interface RouletteModalProps {
   raffle: Raffle;
   onClose: () => void;
-  onPrizeWon: (prize: ExtraPrize, raffleId: string) => void;
+  onPrizeWon: (prize: ExtraPrize, raffleId: string) => Promise<void>;
+
 }
 
 interface Segment {
@@ -153,9 +154,9 @@ const RouletteModal: React.FC<RouletteModalProps> = ({ raffle, onClose, onPrizeW
         }, 7000); 
     };
 
-    const handleClaim = () => {
+    const handleClaim = async () => {
         if (result?.type === 'win' && result.prize) {
-            onPrizeWon(result.prize, raffle.id);
+            await onPrizeWon(result.prize, raffle.id);
         }
         onClose();
     }
@@ -182,8 +183,8 @@ const RouletteModal: React.FC<RouletteModalProps> = ({ raffle, onClose, onPrizeW
     }, [raffle.extraPrizes]);
 
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center z-50 p-4 animate-fade-in" onClick={onClose}>
-            <div className="relative w-full max-w-md text-center" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center z-50 p-4 animate-fade-in overflow-hidden" onClick={onClose}>
+            <div className="relative w-full max-w-md text-center max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
                 <button onClick={onClose} className="absolute -top-10 right-0 text-white/50 hover:text-white transition-colors z-20">
                     <XIcon className="h-8 w-8" />
                 </button>

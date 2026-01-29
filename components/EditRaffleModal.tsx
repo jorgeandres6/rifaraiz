@@ -24,8 +24,8 @@ const EditRaffleModal: React.FC<EditRaffleModalProps> = ({ raffle, onClose, onUp
         description: raffle.description,
         prizeInfo: raffle.prizeInfo,
         ticketPrice: raffle.ticketPrice,
-        salesGoal: raffle.salesGoal,
-        goalThresholdPercent: raffle.goalThresholdPercent,
+        salesGoal: raffle.salesGoal || '',
+        goalThresholdPercent: raffle.goalThresholdPercent || '',
     });
     const [packs, setPacks] = useState<PackState[]>(
         raffle.ticketPacks?.map(p => ({
@@ -144,7 +144,12 @@ const EditRaffleModal: React.FC<EditRaffleModalProps> = ({ raffle, onClose, onUp
 
         const updatedRaffle: Raffle = {
             ...raffle,
-            ...formData,
+            title: formData.title,
+            description: formData.description,
+            prizeInfo: formData.prizeInfo,
+            ticketPrice: formData.ticketPrice,
+            salesGoal: formData.salesGoal ? Number(formData.salesGoal) : undefined,
+            goalThresholdPercent: formData.goalThresholdPercent ? Number(formData.goalThresholdPercent) : undefined,
             ticketPacks: updatedTicketPacks,
             extraPrizes: extraPrizes,
             associatedBusinesses: associatedBusinesses
@@ -204,8 +209,18 @@ const EditRaffleModal: React.FC<EditRaffleModalProps> = ({ raffle, onClose, onUp
                                         <input type="number" name="ticketPrice" step="0.01" value={formData.ticketPrice} onChange={handleFormChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2" min="0.01" />
                                     </div>
                                     <div>
-                                        <label htmlFor="salesGoal" className="block text-sm font-medium text-gray-300">Meta Ventas ($)</label>
+                                        <label htmlFor="salesGoal" className="block text-sm font-medium text-gray-300">Meta Ventas ($) <span className="text-xs text-gray-500">(opcional)</span></label>
                                         <input type="number" name="salesGoal" value={formData.salesGoal} onChange={handleFormChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2" min="1" />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label htmlFor="goalThresholdPercent" className="block text-sm font-medium text-gray-300">Meta a Mostrar (%) <span className="text-xs text-gray-500">(opcional)</span></label>
+                                    <div className="relative group inline-block w-full">
+                                        <input type="number" name="goalThresholdPercent" value={formData.goalThresholdPercent} onChange={handleFormChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2" min="1" max="100" />
+                                        <div className="absolute bottom-full left-0 mb-2 w-64 bg-gray-900 text-white text-xs rounded py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 border border-gray-600 shadow-lg">
+                                            Porcentaje de la meta de ventas que se muestra públicamente en la carta de la rifa.
+                                        </div>
                                     </div>
                                 </div>
 

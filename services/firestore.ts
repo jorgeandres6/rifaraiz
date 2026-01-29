@@ -192,6 +192,33 @@ export const Users = {
   update: (id: string, partial: Partial<UserDoc>) => updateDocument("users", id, partial as any),
 };
 
+// --- UserPrizes helpers ---
+export type UserPrizeDoc = {
+  userId: string;
+  prizeId: string;
+  prizeName: string;
+  raffleId: string;
+  dateWon?: any;
+  redeemed?: boolean;
+  redeemedDate?: any;
+  code: string;
+  [k: string]: any;
+};
+
+export const UserPrizes = {
+  getAll: (constraints?: QueryConstraint[]) => getCollection<UserPrizeDoc>("userPrizes", constraints as any),
+  listen: (onChange: (items: Array<UserPrizeDoc & { id: string }>) => void, constraints?: QueryConstraint[]) => listenCollection<UserPrizeDoc>("userPrizes", onChange, constraints),
+  get: (id: string) => getDocument<UserPrizeDoc>("userPrizes", id),
+  add: (data: Partial<UserPrizeDoc>) => {
+    const prepared = sanitizeForFirestore({ ...data, dateWon: data.dateWon || serverTimestamp() });
+    return addDocument<UserPrizeDoc>("userPrizes", prepared as UserPrizeDoc);
+  },
+  update: (id: string, partial: Partial<UserPrizeDoc>) => {
+    const prepared = sanitizeForFirestore(partial);
+    return updateDocument("userPrizes", id, prepared as any);
+  },
+};
+
 // Re-export serverTimestamp for callers that want to use it
 export { serverTimestamp };
 

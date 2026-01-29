@@ -21,10 +21,10 @@ const BusinessInfoModal: React.FC<BusinessInfoModalProps> = ({ isOpen, onClose, 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[70] p-4 animate-fade-in" onClick={onClose}>
       <div 
-        className="bg-gray-800 rounded-lg shadow-2xl w-full max-w-sm relative transform transition-all border border-gray-600 overflow-hidden" 
+        className="bg-gray-800 rounded-lg shadow-2xl w-full max-w-sm relative transform transition-all border border-gray-600 overflow-hidden max-h-[90vh] flex flex-col" 
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="bg-gradient-to-r from-purple-900 to-indigo-900 p-6 text-center relative">
+        <div className="bg-gradient-to-r from-purple-900 to-indigo-900 p-6 text-center relative flex-shrink-0">
             <button onClick={onClose} className="absolute top-3 right-3 text-white/60 hover:text-white transition-colors">
                 <XIcon className="h-6 w-6" />
             </button>
@@ -37,7 +37,7 @@ const BusinessInfoModal: React.FC<BusinessInfoModalProps> = ({ isOpen, onClose, 
             </span>
         </div>
 
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-4 overflow-y-auto flex-1">
             <div className="flex items-center space-x-3 p-3 bg-gray-700/30 rounded-lg border border-gray-700 hover:border-indigo-500/50 transition-colors">
                 <div className="bg-gray-700 p-2 rounded-full">
                     <MailIcon className="h-5 w-5 text-indigo-400" />
@@ -76,7 +76,7 @@ const BusinessInfoModal: React.FC<BusinessInfoModalProps> = ({ isOpen, onClose, 
             </div>
         </div>
 
-        <div className="p-4 bg-gray-900/50 border-t border-gray-700 text-center">
+        <div className="p-4 bg-gray-900/50 border-t border-gray-700 text-center flex-shrink-0">
             <button 
                 onClick={onClose}
                 className="text-sm text-indigo-400 hover:text-indigo-300 font-semibold transition-colors"

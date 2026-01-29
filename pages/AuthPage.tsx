@@ -5,7 +5,7 @@ import logoRR from '../src/img/logoRR.png';
 
 interface AuthPageProps {
     onLogin: (email: string, pass: string) => Promise<{ success: boolean; message?: string }>;
-    onSignup: (name: string, email: string, pass: string, phone: string, city: string, referralCode?: string, country?: string, bankAccount?: any, cryptoWallet?: any) => Promise<{ success: boolean; message?: string }>;
+    onSignup: (name: string, email: string, pass: string, phone: string, city: string, referralCode?: string, country?: string) => Promise<{ success: boolean; message?: string }>;
     onGoogle?: () => Promise<{ success: boolean; message?: string }>;
     onPasswordReset?: (email: string) => Promise<{ success: boolean; message?: string }>;
 }

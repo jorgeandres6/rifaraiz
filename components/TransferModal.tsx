@@ -89,11 +89,11 @@ const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, raffleTi
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-      <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-lg relative transform transition-all">
+      <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-lg relative transform transition-all max-h-[90vh] flex flex-col overflow-hidden">
         <button onClick={onClose} className="absolute top-3 right-3 text-gray-400 hover:text-white">
           <XIcon className="h-6 w-6" />
         </button>
-        <div className="p-6">
+        <div className="p-6 overflow-y-auto flex-1">
           <h2 className="text-2xl font-bold text-indigo-400">Transferir Boletos</h2>
           <p className="text-gray-400 mt-1">Para la rifa: <span className="font-semibold">{raffleTitle}</span></p>
 

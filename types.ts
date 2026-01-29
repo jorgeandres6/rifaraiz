@@ -54,8 +54,8 @@ export interface Raffle {
   title: string;
   description: string;
   prizeInfo: string;
-  salesGoal: number; // Total revenue goal in dollars
-  goalThresholdPercent: number; // Percentage of goal to display publicly
+  salesGoal?: number; // Total revenue goal in dollars (optional)
+  goalThresholdPercent?: number; // Percentage of goal to display publicly (optional)
   ticketPrice: number;
   soldTickets: number;
   currentSales: number; // Actual revenue in dollars
@@ -99,6 +99,9 @@ export interface UserPrize {
   prizeName: string;
   raffleId: string;
   dateWon: Date;
+  redeemed?: boolean; // Whether the prize has been claimed/redeemed
+  redeemedDate?: Date; // Date when the prize was redeemed
+  code: string; // Unique code to redeem the prize
 }
 
 export interface Notification {

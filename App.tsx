@@ -9,7 +9,7 @@ import SettingsModal from './components/SettingsModal';
 import Toasts, { Toast } from './components/Toasts';
 
 // Firestore helpers
-import { Raffles, Tickets, Commissions, Users, setDocument, updateDocument, serverTimestamp } from './services/firestore';
+import { Raffles, Tickets, Commissions, Users, UserPrizes, setDocument, updateDocument, serverTimestamp } from './services/firestore';
 
 const App: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -116,6 +116,7 @@ const App: React.FC = () => {
     let ticketsUnsub: (() => void) | null = null;
     let commissionsUnsub: (() => void) | null = null;
     let usersUnsub: (() => void) | null = null;
+    let userPrizesUnsub: (() => void) | null = null;
 
     try {
       rafflesUnsub = Raffles.listen((items: any[]) => {
@@ -155,6 +156,15 @@ const App: React.FC = () => {
         setUsers(parsed);
       });
 
+      userPrizesUnsub = UserPrizes.listen((items: any[]) => {
+        const parsed = items.map((p: any) => ({
+          ...p,
+          dateWon: p.dateWon && typeof p.dateWon === 'object' && typeof p.dateWon.toDate === 'function' ? p.dateWon.toDate() : p.dateWon,
+          redeemedDate: p.redeemedDate && typeof p.redeemedDate === 'object' && typeof p.redeemedDate.toDate === 'function' ? p.redeemedDate.toDate() : p.redeemedDate,
+        }));
+        setUserPrizes(parsed);
+      });
+
       console.log('Firestore listeners initialized');
     } catch (err) {
       console.error('Error initializing Firestore listeners:', err);
@@ -166,6 +176,7 @@ const App: React.FC = () => {
       if (ticketsUnsub) ticketsUnsub();
       if (commissionsUnsub) commissionsUnsub();
       if (usersUnsub) usersUnsub();
+      if (userPrizesUnsub) userPrizesUnsub();
     };
   }, []);
 
@@ -349,12 +360,12 @@ const App: React.FC = () => {
     }
   };
 
-  const handleSignup = async (name: string, email: string, pass: string, phone: string, city: string, referralCode?: string, country?: string, bankAccount?: any, cryptoWallet?: any): Promise<{ success: boolean; message?: string }> => {
+  const handleSignup = async (name: string, email: string, pass: string, phone: string, city: string, referralCode?: string, country?: string): Promise<{ success: boolean; message?: string }> => {
     const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
     if (firebaseConfigured) {
       try {
         const { signupWithEmail } = await import('./services/auth');
-        const res = await signupWithEmail({ name, email, password: pass, phone, city, referralCode, country, bankAccount, cryptoWallet });
+        const res = await signupWithEmail({ name, email, password: pass, phone, city, referralCode, country });
         if (!res.success) return { success: false, message: res.message || 'No se pudo crear la cuenta.' };
         // After sign up, onAuthState listener should pick it up; but set current user optimistically
         setCurrentUser({ id: res.user.uid, name: name, email, role: UserRole.USER, referralCode: '' } as any);
@@ -377,8 +388,6 @@ const App: React.FC = () => {
       role: UserRole.USER,
       referralCode: name.toUpperCase().substring(0, 4) + String(Date.now()).slice(-3),
       country: country || undefined,
-      bankAccount: bankAccount || undefined,
-      cryptoWallet: cryptoWallet || undefined,
     };
 
     const uplineIdsForJson: { level1?: string; level2?: string; level3?: string } = {};
@@ -426,9 +435,7 @@ const App: React.FC = () => {
             uplineIds: uplineIdsForJson
         },
         paymentData: {
-            country: newUser.country || null,
-            bankAccount: newUser.bankAccount || null,
-            cryptoWallet: newUser.cryptoWallet || null
+            country: newUser.country || null
         },
         metadata: {
             sourceIp: "192.168.1.1", // Mock IP
@@ -607,8 +614,18 @@ const App: React.FC = () => {
     }
   };
 
-  const handlePrizeWon = (prize: ExtraPrize, raffleId: string) => {
+  const handlePrizeWon = async (prize: ExtraPrize, raffleId: string) => {
     if (!currentUser) return;
+
+    // Generate unique redemption code (8 alphanumeric characters)
+    const generatePrizeCode = () => {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let code = '';
+      for (let i = 0; i < 8; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return code;
+    };
 
     const newUserPrize: UserPrize = {
       id: `up_${Date.now()}`,
@@ -617,9 +634,84 @@ const App: React.FC = () => {
       prizeName: prize.name,
       raffleId: raffleId,
       dateWon: new Date(),
+      redeemed: false,
+      code: generatePrizeCode(),
     };
+    
+    // Update local state
     setUserPrizes(prev => [...prev, newUserPrize]);
     console.log("Prize won and stored:", newUserPrize);
+
+    // Save to Firestore
+    try {
+      const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
+      if (firebaseConfigured) {
+        await UserPrizes.add({
+          userId: newUserPrize.userId,
+          prizeId: newUserPrize.prizeId,
+          prizeName: newUserPrize.prizeName,
+          raffleId: newUserPrize.raffleId,
+          dateWon: newUserPrize.dateWon,
+          redeemed: newUserPrize.redeemed,
+          code: newUserPrize.code,
+        });
+      }
+    } catch (err) {
+      console.error('Error saving prize to Firestore:', err);
+      showToast('Error guardando el premio en Firestore', 'error');
+    }
+  };
+
+  const handleRedeemPrize = async (prizeId: string, code: string) => {
+    // Only admins can redeem prizes
+    if (!currentUser || currentUser.role !== UserRole.ADMIN) {
+      showToast('Solo administradores pueden canjear premios', 'error');
+      return false;
+    }
+
+    // Find the prize and validate the code
+    const prize = userPrizes.find(p => p.id === prizeId);
+    if (!prize) {
+      showToast('Premio no encontrado', 'error');
+      return false;
+    }
+
+    if (prize.code !== code.toUpperCase()) {
+      showToast('Código de canje incorrecto', 'error');
+      return false;
+    }
+
+    if (prize.redeemed) {
+      showToast('Este premio ya ha sido canjeado', 'error');
+      return false;
+    }
+
+    // Update local state
+    setUserPrizes(prev => 
+      prev.map(p => 
+        p.id === prizeId 
+          ? { ...p, redeemed: true, redeemedDate: new Date() }
+          : p
+      )
+    );
+
+    // Update in Firestore
+    try {
+      const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
+      if (firebaseConfigured) {
+        await UserPrizes.update(prizeId, {
+          redeemed: true,
+          redeemedDate: new Date(),
+        });
+      }
+    } catch (err) {
+      console.error('Error updating prize in Firestore:', err);
+      showToast('Error actualizando el premio en Firestore', 'error');
+      return false;
+    }
+
+    showToast('Premio canjeado exitosamente', 'success');
+    return true;
   };
 
   const handleAddRaffle = async (newRaffleData: Omit<Raffle, 'id' | 'soldTickets' | 'currentSales'>) => {
@@ -834,6 +926,7 @@ const App: React.FC = () => {
           tickets={tickets}
           commissions={commissions}
           users={users}
+          userPrizes={userPrizes}
           onPurchaseTicket={handlePurchaseTicket}
           onAddRaffle={handleAddRaffle}
           onTransferTickets={handleTransferTickets}
@@ -843,6 +936,7 @@ const App: React.FC = () => {
           onPrizeWon={handlePrizeWon}
           onCloseRoulette={() => setRaffleForRoulette(null)}
           onAddNotification={handleAddNotification}
+          onRedeemPrize={handleRedeemPrize}
         />
       </main>
 

@@ -14,12 +14,14 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ isOpen, onClose, 
   if (!isOpen) return null;
 
   const originalOwner = users.find(u => u.id === ticket.originalUserId);
-  const publicGoalAmount = raffle.salesGoal * (raffle.goalThresholdPercent / 100);
+  const publicGoalAmount = raffle.salesGoal && raffle.goalThresholdPercent
+    ? raffle.salesGoal * (raffle.goalThresholdPercent / 100)
+    : undefined;
 
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-lg relative transform transition-all p-6">
+      <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-lg relative transform transition-all p-6 max-h-[90vh] overflow-y-auto">
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white z-10">
           <XIcon className="h-6 w-6" />
         </button>
@@ -48,10 +50,12 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ isOpen, onClose, 
                         <p className="font-mono text-lg text-white mt-1">{ticket.ticketNumber}</p>
                     </div>
                     <div className="space-y-2 text-xs text-indigo-100">
-                        <div className="flex items-center justify-end">
-                            <span>Meta: ${publicGoalAmount.toLocaleString()}</span>
-                            <CurrencyDollarIcon className="h-4 w-4 ml-1.5 text-indigo-200"/>
-                        </div>
+                        {publicGoalAmount && (
+                          <div className="flex items-center justify-end">
+                              <span>Meta: ${publicGoalAmount.toLocaleString()}</span>
+                              <CurrencyDollarIcon className="h-4 w-4 ml-1.5 text-indigo-200"/>
+                          </div>
+                        )}
                         <div className="flex items-center justify-end">
                             <span>{originalOwner?.name || 'N/A'}</span>
                             <UserCircleIcon className="h-4 w-4 ml-1.5 text-indigo-200"/>
