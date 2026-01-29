@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { PurchaseOrder, Raffle, PurchaseOrderStatus } from '../types';
 import { DocumentTextIcon, CheckCircleIcon, ExclamationTriangleIcon, ClockIcon } from './icons';
 
@@ -13,10 +13,30 @@ const UserPurchaseOrders: React.FC<UserPurchaseOrdersProps> = ({
   raffles,
   userId,
 }) => {
+  const [filterStatus, setFilterStatus] = useState<PurchaseOrderStatus | 'ALL'>('ALL');
+
   const userOrders = useMemo(
     () => purchaseOrders.filter(order => order.userId === userId),
     [purchaseOrders, userId]
   );
+
+  const filteredOrders = useMemo(
+    () => filterStatus === 'ALL' 
+      ? userOrders 
+      : userOrders.filter(order => order.status === filterStatus),
+    [userOrders, filterStatus]
+  );
+
+  const statusCounts = useMemo(() => {
+    return {
+      ALL: userOrders.length,
+      PENDING: userOrders.filter(o => o.status === 'PENDING').length,
+      PAID: userOrders.filter(o => o.status === 'PAID').length,
+      VERIFIED: userOrders.filter(o => o.status === 'VERIFIED').length,
+      REJECTED: userOrders.filter(o => o.status === 'REJECTED').length,
+      CANCELLED: userOrders.filter(o => o.status === 'CANCELLED').length,
+    };
+  }, [userOrders]);
 
   const getRaffleName = (raffleId: string) => {
     return raffles.find(r => r.id === raffleId)?.title || 'Rifa desconocida';
@@ -101,11 +121,89 @@ const UserPurchaseOrders: React.FC<UserPurchaseOrdersProps> = ({
       <div className="flex items-center gap-3 mb-6">
         <DocumentTextIcon className="w-6 h-6 text-purple-600" />
         <h3 className="text-lg font-bold text-gray-900">
-          Mis Órdenes de Compra ({userOrders.length})
+          Mis Órdenes de Compra ({filteredOrders.length} de {userOrders.length})
         </h3>
       </div>
 
-      {userOrders.map(order => (
+      {/* Filter Tabs */}
+      <div className="flex flex-wrap gap-2 mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <button
+          onClick={() => setFilterStatus('ALL')}
+          className={`px-4 py-2 rounded-full font-semibold text-sm transition ${
+            filterStatus === 'ALL'
+              ? 'bg-purple-600 text-white'
+              : 'bg-white text-gray-700 border border-gray-300 hover:border-purple-400'
+          }`}
+        >
+          Todas ({statusCounts.ALL})
+        </button>
+        <button
+          onClick={() => setFilterStatus('PENDING')}
+          className={`px-4 py-2 rounded-full font-semibold text-sm transition flex items-center gap-2 ${
+            filterStatus === 'PENDING'
+              ? 'bg-yellow-400 text-white'
+              : 'bg-white text-yellow-700 border border-yellow-300 hover:bg-yellow-50'
+          }`}
+        >
+          <ClockIcon className="w-4 h-4" />
+          Por Pagar ({statusCounts.PENDING})
+        </button>
+        <button
+          onClick={() => setFilterStatus('PAID')}
+          className={`px-4 py-2 rounded-full font-semibold text-sm transition flex items-center gap-2 ${
+            filterStatus === 'PAID'
+              ? 'bg-blue-600 text-white'
+              : 'bg-white text-blue-700 border border-blue-300 hover:bg-blue-50'
+          }`}
+        >
+          <DocumentTextIcon className="w-4 h-4" />
+          Pagado ({statusCounts.PAID})
+        </button>
+        <button
+          onClick={() => setFilterStatus('VERIFIED')}
+          className={`px-4 py-2 rounded-full font-semibold text-sm transition flex items-center gap-2 ${
+            filterStatus === 'VERIFIED'
+              ? 'bg-green-600 text-white'
+              : 'bg-white text-green-700 border border-green-300 hover:bg-green-50'
+          }`}
+        >
+          <CheckCircleIcon className="w-4 h-4" />
+          Verificado ({statusCounts.VERIFIED})
+        </button>
+        <button
+          onClick={() => setFilterStatus('REJECTED')}
+          className={`px-4 py-2 rounded-full font-semibold text-sm transition flex items-center gap-2 ${
+            filterStatus === 'REJECTED'
+              ? 'bg-red-600 text-white'
+              : 'bg-white text-red-700 border border-red-300 hover:bg-red-50'
+          }`}
+        >
+          <ExclamationTriangleIcon className="w-4 h-4" />
+          Rechazado ({statusCounts.REJECTED})
+        </button>
+        <button
+          onClick={() => setFilterStatus('CANCELLED')}
+          className={`px-4 py-2 rounded-full font-semibold text-sm transition flex items-center gap-2 ${
+            filterStatus === 'CANCELLED'
+              ? 'bg-gray-600 text-white'
+              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+          }`}
+        >
+          <ExclamationTriangleIcon className="w-4 h-4" />
+          Cancelado ({statusCounts.CANCELLED})
+        </button>
+      </div>
+
+      {filteredOrders.length === 0 ? (
+        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+          <DocumentTextIcon className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+          <h3 className="text-lg font-bold text-gray-900 mb-2">Sin Órdenes</h3>
+          <p className="text-gray-600">
+            No hay órdenes con el estado seleccionado.
+          </p>
+        </div>
+      ) : (
+        filteredOrders.map(order => (
         <div
           key={order.id}
           className={`bg-white rounded-lg border-2 transition p-5 ${
@@ -280,7 +378,8 @@ const UserPurchaseOrders: React.FC<UserPurchaseOrdersProps> = ({
             </div>
           )}
         </div>
-      ))}
+        ))
+      )}
     </div>
   );
 };

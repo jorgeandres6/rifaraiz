@@ -30,10 +30,15 @@ const PurchaseOrdersModal: React.FC<PurchaseOrdersModalProps> = ({
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [generatingTickets, setGeneratingTickets] = useState(false);
   const [ticketsGenerated, setTicketsGenerated] = useState<string[]>([]);
+  const [searchCode, setSearchCode] = useState('');
 
   const filteredOrders = useMemo(
-    () => purchaseOrders.filter(order => order.status === activeTab),
-    [purchaseOrders, activeTab]
+    () => purchaseOrders.filter(order => {
+      const matchesTab = order.status === activeTab;
+      const matchesSearch = !searchCode || order.orderCode.toLowerCase().includes(searchCode.toLowerCase());
+      return matchesTab && matchesSearch;
+    }),
+    [purchaseOrders, activeTab, searchCode]
   );
 
   const getUserName = (userId: string) => {
@@ -90,8 +95,15 @@ const PurchaseOrdersModal: React.FC<PurchaseOrdersModalProps> = ({
       // Update order in Firestore with verification
       await PurchaseOrders.verify(order.id, ticketIds, currentUser.id);
 
-      // Increment roulette chances for the user based on quantity
-      await RouletteChances.incrementChances(order.userId, order.raffleId, order.quantity);
+      // Check if raffle has available prizes before granting roulette chances
+      const hasPrizes = raffle.extraPrizes && raffle.extraPrizes.some(prize => prize.quantity > 0);
+      
+      if (hasPrizes) {
+        // Increment roulette chances for the user based on quantity
+        await RouletteChances.incrementChances(order.userId, order.raffleId, order.quantity);
+      } else {
+        console.log('No hay premios disponibles para esta rifa, no se asignaron oportunidades de ruleta');
+      }
 
       if (onVerifyOrder) {
         onVerifyOrder(order.id, ticketIds);
@@ -215,6 +227,19 @@ const PurchaseOrdersModal: React.FC<PurchaseOrdersModalProps> = ({
             </button>
           ))}
         </div>
+
+        {/* Search Bar */}
+        {!selectedOrder && (
+          <div className="px-6 py-4 bg-gray-50 border-b">
+            <input
+              type="text"
+              placeholder="Buscar por código de orden (ej: ORD-20260128-ABCD1234)..."
+              value={searchCode}
+              onChange={(e) => setSearchCode(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
+            />
+          </div>
+        )}
 
         {/* Content */}
         <div className="p-6">
@@ -454,7 +479,13 @@ const PurchaseOrdersModal: React.FC<PurchaseOrdersModalProps> = ({
                     onClick={() => setSelectedOrder(order)}
                     className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer hover:border-purple-300"
                   >
-                    <div className="grid grid-cols-5 gap-4 items-center">
+                    <div className="grid grid-cols-6 gap-4 items-center">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase font-semibold">Código</p>
+                        <p className="font-bold text-indigo-600 font-mono truncate">
+                          {order.orderCode}
+                        </p>
+                      </div>
                       <div>
                         <p className="text-xs text-gray-500 uppercase font-semibold">Usuario</p>
                         <p className="font-bold text-gray-900 truncate">
