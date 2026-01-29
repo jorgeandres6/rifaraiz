@@ -195,10 +195,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentU
 
         {/* Password tab */}
         {activeTab === 'password' && (
-          <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 p-6 space-y-4 flex flex-col">
+          <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 flex flex-col">
+             <div className="p-6 space-y-4">
              <h4 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-2">Cambiar Contraseña</h4>
              
-             <div className="flex-1">
+             <div>
                 <label htmlFor="currentPass" className="block text-sm font-medium text-gray-300">Contraseña Actual</label>
                 <div className="mt-1 relative rounded-md shadow-sm">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -265,7 +266,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentU
             )}
              </div>
 
-            <div className="border-t border-gray-700 p-4 bg-gray-800/50 flex justify-between items-center">
+            <div className="border-t border-gray-700 p-4 bg-gray-800/50 flex justify-between items-center flex-shrink-0">
                 <div>
                     <button
                         type="button"
@@ -395,7 +396,20 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentU
                     </div>
                 )}
 
-                <div className="pt-4 flex justify-end gap-3">
+                {error && (
+                <div className="p-3 bg-red-500/20 border border-red-500/50 rounded text-red-300 text-sm mt-4">
+                    {error}
+                </div>
+            )}
+
+            {success && (
+                <div className="p-3 bg-green-500/20 border border-green-500/50 rounded text-green-300 text-sm font-semibold text-center mt-4">
+                    {success}
+                </div>
+            )}
+            </div>
+
+            <div className="border-t border-gray-700 p-6 bg-gray-800/50 flex justify-end gap-3 flex-shrink-0">
                     <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors">Cancelar</button>
                     <button disabled={profileLoading} onClick={async () => {
                         setError('');
@@ -434,50 +448,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentU
                         {profileLoading ? 'Cargando...' : 'Guardar Perfil'}
                     </button>
                 </div>
-            </div>
-        </div>
-        )}
-
-        {/* Footer with action buttons - shown when profile tab is active */}
-        {activeTab === 'profile' && (
-        <div className="border-t border-gray-700 p-6 bg-gray-800/50 flex justify-end gap-3">
-            <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors">Cancelar</button>
-            <button disabled={profileLoading} onClick={async () => {
-                setError('');
-                setSuccess('');
-                // validation
-                if (!name) { setError('El nombre es requerido.'); return; }
-                if (paymentMethod === 'bank' && (!bankName || !idNumber || !accountNumber)) { setError('Por favor completa los datos bancarios.'); return; }
-                if (paymentMethod === 'crypto' && (!walletAddress || !walletNetwork)) { setError('Por favor completa los datos de billetera.'); return; }
-
-                const payload: any = {
-                    name,
-                    phone: phone || null,
-                    city: city || null,
-                    country: country || null,
-                };
-                if (paymentMethod === 'bank') payload.bankAccount = { bankName, accountType, idNumber, accountNumber };
-                else payload.cryptoWallet = { address: walletAddress, network: walletNetwork };
-
-                setProfileLoading(true);
-                try {
-                    const res = await onSaveProfile(payload);
-                    if (res.success) {
-                        setSuccess('Perfil actualizado.');
-                        setTimeout(() => setSuccess(''), 2000);
-                    } else {
-                        setError(res.message || 'No se pudo actualizar el perfil.');
-                        setTimeout(() => setError(''), 4000);
-                    }
-                } catch (e) {
-                    setError('Error actualizando el perfil.');
-                    setTimeout(() => setError(''), 4000);
-                } finally {
-                    setProfileLoading(false);
-                }
-            }} className={`px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors ${profileLoading ? 'opacity-60 cursor-not-allowed' : ''}`}>
-                {profileLoading ? 'Cargando...' : 'Guardar Perfil'}
-            </button>
         </div>
         )}
       </div>
