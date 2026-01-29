@@ -704,8 +704,8 @@ const App: React.FC = () => {
 
     // Persist raffle to Firestore (best-effort)
     try {
-      // Use the same local id as the Firestore document id so they stay in sync
-      await setDocument('raffles', newRaffle.id, { ...newRaffle, createdAt: serverTimestamp() });
+      // Use Raffles.add which handles sanitization
+      await Raffles.add(newRaffle);
     } catch (err) {
       console.error('Error creating raffle in Firestore:', err);
       showToast('Error creating raffle in Firestore. Revisa la consola para más detalles.', 'error');

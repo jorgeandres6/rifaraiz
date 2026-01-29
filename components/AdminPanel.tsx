@@ -1233,7 +1233,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onAddRaffle, raffles, tickets, 
                 </button>
                 <button onClick={() => setActiveTab('orders')} className={getTabClass('orders')}>
                     <ClipboardListIcon className="h-5 w-5 mr-2" />
-                    Órdenes ({purchaseOrders.length})
+                    Órdenes ({purchaseOrders.filter(o => o.status === 'PENDING' || o.status === 'PAID').length})
                 </button>
                 <button onClick={() => setActiveTab('prizes')} className={getTabClass('prizes')}>
                     <GiftIcon className="h-5 w-5 mr-2" />
