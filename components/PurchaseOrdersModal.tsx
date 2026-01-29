@@ -447,13 +447,13 @@ const PurchaseOrdersModal: React.FC<PurchaseOrdersModalProps> = ({
                         
                         {/* Payment Method */}
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-sm font-semibold text-gray-900 mb-2">
                             Método de Pago *
                           </label>
                           <select
                             value={paymentMethod}
                             onChange={(e) => setPaymentMethod(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                            className="w-full px-4 py-3 border-2 border-blue-400 rounded-lg bg-white text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 hover:border-blue-500"
                           >
                             <option value="">Selecciona un método...</option>
                             <option value="deposito">Depósito Bancario</option>
@@ -466,14 +466,14 @@ const PurchaseOrdersModal: React.FC<PurchaseOrdersModalProps> = ({
 
                         {/* Payment Notes */}
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-sm font-semibold text-gray-900 mb-2">
                             Observaciones (Número de depósito, referencia, etc.)
                           </label>
                           <textarea
                             value={paymentNotes}
                             onChange={(e) => setPaymentNotes(e.target.value)}
                             placeholder="Ej: Depósito #12345, Transferencia a Juan, Efectivo recibido por María..."
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 resize-none"
+                            className="w-full px-4 py-3 border-2 border-blue-400 rounded-lg bg-white text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 hover:border-blue-500 resize-none placeholder-gray-500"
                             rows={3}
                           />
                         </div>
@@ -538,14 +538,14 @@ const PurchaseOrdersModal: React.FC<PurchaseOrdersModalProps> = ({
                         
                         {/* Verification Notes */}
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-sm font-semibold text-gray-900 mb-2">
                             Notas de Verificación (Opcional)
                           </label>
                           <textarea
                             value={verificationNotes}
                             onChange={(e) => setVerificationNotes(e.target.value)}
                             placeholder="Ej: Boletos verificados, revisados y listos para entrega. Documentación completa..."
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 resize-none"
+                            className="w-full px-4 py-3 border-2 border-green-400 rounded-lg bg-white text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 hover:border-green-500 resize-none placeholder-gray-500"
                             rows={3}
                           />
                         </div>

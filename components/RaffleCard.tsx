@@ -61,7 +61,9 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle, onPurchase, hasActiveTi
                 </div>
                 <h3 className="text-xl font-bold text-white mb-1">{raffle.title}</h3>
                 <span className="text-xs uppercase tracking-widest text-purple-300 font-semibold mb-2 block">Edición Especial</span>
-                <p className="mt-2 text-sm text-gray-300 h-16">{raffle.description}</p>
+                <div className="mt-2 h-16 overflow-y-auto custom-scrollbar">
+                    <p className="text-sm text-gray-300">{raffle.description}</p>
+                </div>
                 
                 <div className="mt-4 bg-purple-500/20 rounded-lg p-3 border border-purple-500/30">
                      <p className="text-sm font-semibold text-purple-200 mb-1">Premio Exclusivo:</p>
@@ -113,7 +115,9 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle, onPurchase, hasActiveTi
                     Rifa Mensual
                 </div>
                 <h3 className="text-xl font-bold text-yellow-400">{raffle.title}</h3>
-                <p className="mt-2 text-sm text-gray-300 h-16">{raffle.description}</p>
+                <div className="mt-2 h-16 overflow-y-auto custom-scrollbar">
+                    <p className="text-sm text-gray-300">{raffle.description}</p>
+                </div>
                 
                 <div className="mt-4 bg-yellow-500/10 rounded-lg p-3 border border-yellow-500/20">
                      <p className="text-sm font-semibold text-yellow-200 mb-1">Premio:</p>
@@ -151,7 +155,9 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle, onPurchase, hasActiveTi
     <div className="bg-gray-800 rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 flex flex-col">
       <div className="p-6 flex-grow">
         <h3 className="text-xl font-bold text-indigo-400">{raffle.title}</h3>
-        <p className="mt-2 text-sm text-gray-400 h-16">{raffle.description}</p>
+        <div className="mt-2 h-16 overflow-y-auto custom-scrollbar">
+            <p className="text-sm text-gray-400">{raffle.description}</p>
+        </div>
         
         <div className="mt-4 space-y-3 text-sm">
            <div className="flex items-center text-gray-300">

@@ -11,6 +11,9 @@ import Toasts, { Toast } from './components/Toasts';
 // Firestore helpers
 import { Raffles, Tickets, Commissions, Users, UserPrizes, PurchaseOrders, RouletteChances, setDocument, updateDocument, serverTimestamp } from './services/firestore';
 
+// Commission calculation service
+import { calculateCommissions, buildUpline } from './services/commissionService';
+
 const App: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [raffles, setRaffles] = useState<Raffle[]>([]);
@@ -539,6 +542,7 @@ const App: React.FC = () => {
     try {
       const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
       if (firebaseConfigured) {
+        // Add purchase order
         await PurchaseOrders.add({
           orderCode: newPurchaseOrder.orderCode,
           userId: currentUser.id,
@@ -547,6 +551,25 @@ const App: React.FC = () => {
           quantity: amount,
           totalPrice: totalCost,
         });
+
+        // Calculate and create commissions for upline
+        const uplineIds = currentUser.upline || [];
+        if (uplineIds.length > 0) {
+          const newCommissions = calculateCommissions(totalCost, currentUser.id, uplineIds, raffleId);
+          
+          // Save each commission to Firestore
+          for (const commission of newCommissions) {
+            await Commissions.add(commission);
+          }
+          
+          // Update local state
+          const commissionsWithIds = newCommissions.map((c, idx) => ({
+            id: `cm_${Date.now()}_${idx}`,
+            ...c,
+            date: new Date(),
+          }));
+          setCommissions(prev => [...prev, ...commissionsWithIds]);
+        }
       }
       
       showToast(`Orden de compra creada. Espera la verificación del administrador.`, 'success');

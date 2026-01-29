@@ -1,6 +1,7 @@
 import { auth, db } from './firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as firebaseSignOut, updateProfile, onAuthStateChanged, User as FirebaseUser, sendEmailVerification, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc, collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
+import { buildUpline } from './commissionService';
 
 export interface AuthUser {
   uid: string;
@@ -47,12 +48,13 @@ export async function signupWithEmail({ name, email, password, phone, city, refe
     console.warn('Failed sending verification email', err);
   }
 
-  // build a referral code
+  // Build a referral code
   const generatedReferralCode = (name || 'user').toUpperCase().substring(0, 4) + String(Date.now()).slice(-3);
 
   // Save user metadata in Firestore (document id = sanitized email). Keep firebase uid for reference
   const docId = sanitizeEmail(fbUser.email || fbUser.uid);
   const userDocRef = doc(db, 'users', docId);
+  
   const userData = {
     id: docId,
     firebaseUid: fbUser.uid,
@@ -63,17 +65,21 @@ export async function signupWithEmail({ name, email, password, phone, city, refe
     country: country || null,
     referralCode: generatedReferralCode,
     referredBy: null,
+    upline: [], // Will be populated if referral code is provided
     role: 'user',
     createdAt: new Date().toISOString(),
   } as any;
 
-  // Link referral if provided
+  // Link referral if provided and build upline
   if (referralCode) {
     const q = query(collection(db, 'users'), where('referralCode', '==', referralCode));
     const snap = await getDocs(q);
     if (!snap.empty) {
       const refDoc = snap.docs[0];
+      const referrerData = refDoc.data();
       userData.referredBy = refDoc.id;
+      // Build upline: referrer + referrer's upline
+      userData.upline = buildUpline(refDoc.id, referrerData?.upline || []);
     }
   }
 
