@@ -924,22 +924,25 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
         {/* Profile Modal */}
         {isProfileOpen && profileUser && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl relative animate-fade-in">
-              <button onClick={handleCloseProfile} className="absolute top-3 right-3 text-gray-400 hover:text-white">
+            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl relative animate-fade-in flex flex-col max-h-[90vh]">
+              <button onClick={handleCloseProfile} className="absolute top-3 right-3 text-gray-400 hover:text-white z-10">
                 <XIcon className="h-6 w-6" />
               </button>
-              <form onSubmit={handleProfileSave} className="p-6">
-                <div className="flex items-center mb-4">
-                  <div className="p-2 bg-indigo-500/20 rounded-full mr-3">
-                    <InformationCircleIcon className="h-6 w-6 text-indigo-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white">Perfil: {profileUser.name}{profileLoading && <span className="ml-3 text-sm text-gray-400">Cargando…</span>}</h3>
-                    <p className="text-sm text-gray-400">{profileUser.email}</p>
+              <form onSubmit={handleProfileSave} className="flex flex-col h-full">
+                <div className="p-6 border-b border-gray-700">
+                  <div className="flex items-center">
+                    <div className="p-2 bg-indigo-500/20 rounded-full mr-3">
+                      <InformationCircleIcon className="h-6 w-6 text-indigo-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-white">Perfil: {profileUser.name}{profileLoading && <span className="ml-3 text-sm text-gray-400">Cargando…</span>}</h3>
+                      <p className="text-sm text-gray-400">{profileUser.email}</p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="overflow-y-auto flex-1 p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-300">País</label>
                     <input name="country" value={profileForm.country} onChange={handleProfileChange} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2" />
@@ -1001,8 +1004,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
                   )}
 
                 </div>
+                </div>
 
-                <div className="mt-6 flex justify-end space-x-3">
+                <div className="border-t border-gray-700 p-6 flex justify-end space-x-3 bg-gray-800/50">
                   <button type="button" onClick={handleCloseProfile} className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600">Cancelar</button>
                   <button type="submit" disabled={profileSaving} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">
                     {profileSaving ? 'Guardando...' : 'Guardar Perfil'}
@@ -1560,7 +1564,7 @@ const ReferralNetworkStats: React.FC<{ users: User[], tickets: Ticket[], raffles
         {/* Payment Confirmation Modal */}
         {paymentModalCommission && (
           <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4">
-            <div className="bg-gray-900 rounded-xl shadow-2xl max-w-md w-full border-2 border-emerald-500">
+            <div className="bg-gray-900 rounded-xl shadow-2xl max-w-md w-full border-2 border-emerald-500 flex flex-col max-h-[90vh]">
               {/* Header */}
               <div className="p-6 border-b-2 border-emerald-500 bg-gradient-to-r from-emerald-900/50 to-emerald-800/50">
                 <h3 className="text-2xl font-bold text-white mb-1">Confirmar Pago</h3>
@@ -1570,7 +1574,7 @@ const ReferralNetworkStats: React.FC<{ users: User[], tickets: Ticket[], raffles
               </div>
 
               {/* Content */}
-              <div className="p-6 space-y-5">
+              <div className="overflow-y-auto flex-1 p-6 space-y-5">
                 {/* Commission Info */}
                 <div className="bg-gray-800/70 p-4 rounded-lg border border-gray-700">
                   <div className="flex justify-between items-center mb-2">
