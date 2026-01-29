@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { PurchaseOrder, User, Raffle, PurchaseOrderStatus, Ticket } from '../types';
-import { PurchaseOrders, RouletteChances, Tickets } from '../services/firestore';
+import { PurchaseOrders, RouletteChances, Tickets, Commissions } from '../services/firestore';
+import { calculateCommissions } from '../services/commissionService';
 import { XIcon, CheckCircleIcon, ExclamationTriangleIcon, DocumentTextIcon, ClockIcon } from './icons';
 
 interface PurchaseOrdersModalProps {
@@ -99,6 +100,37 @@ const PurchaseOrdersModal: React.FC<PurchaseOrdersModalProps> = ({
 
       // Update order in Firestore with verification
       await PurchaseOrders.verify(order.id, ticketIds, currentUser.id, verificationNotes);
+
+      // Calculate and create commissions for upline NOW
+      const buyer = users.find(u => u.id === order.userId);
+      const uplineIds = buyer?.upline || [];
+      
+      console.log('🔍 DEBUG Comisiones en Verificación:', {
+        orderId: order.id,
+        orderCode: order.orderCode,
+        buyerId: order.userId,
+        buyerName: buyer?.name,
+        upline: uplineIds,
+        uplineLength: uplineIds.length,
+        totalPrice: order.totalPrice,
+      });
+      
+      if (uplineIds.length > 0) {
+        const newCommissions = calculateCommissions(order.totalPrice, order.userId, uplineIds, order.raffleId);
+        console.log('💰 Comisiones calculadas en verificación:', newCommissions.map(c => ({
+          nivel: c.level,
+          usuario: c.userId,
+          monto: c.amount,
+        })));
+        
+        // Save each commission to Firestore
+        for (const commission of newCommissions) {
+          await Commissions.add(commission);
+          console.log(`✅ Comisión guardada: Nivel ${commission.level} - $${commission.amount.toFixed(2)} para ${commission.userId}`);
+        }
+      } else {
+        console.log('⚠️ No se crean comisiones: upline vacío');
+      }
 
       // Check if raffle has available prizes before granting roulette chances
       const hasPrizes = raffle.extraPrizes && raffle.extraPrizes.some(prize => prize.quantity > 0);

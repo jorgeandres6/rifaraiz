@@ -20,9 +20,28 @@ const ReferralStats: React.FC<ReferralStatsProps> = ({ currentUser, users, ticke
         }, {} as Record<string, number>);
 
         const directReferrals = users.filter(u => u && u.referredBy === currentUser.id);
-        const downline = users.filter(u => u && u.upline?.includes(currentUser.id));
-        const downlineIds = downline.map(u => u?.id).filter(Boolean) as string[];
+        
+        // Build complete downline recursively (direct + all indirect referrals)
+        const getAllDownline = (userId: string): User[] => {
+            const direct = users.filter(u => u && u.referredBy === userId);
+            const indirect = direct.flatMap(u => getAllDownline(u.id));
+            return [...direct, ...indirect];
+        };
+
+        const fullDownline = getAllDownline(currentUser.id);
+        // Remove duplicates using Map
+        const uniqueDownline = Array.from(new Map(fullDownline.map(u => [u.id, u])).values());
+        const downlineIds = uniqueDownline.map(u => u.id);
         const networkTickets = tickets.filter(t => downlineIds.includes(t.userId));
+        
+        console.log('🔍 DEBUG Red de Referidos:', {
+            currentUserId: currentUser.id,
+            currentUserName: currentUser.name,
+            directReferralsCount: directReferrals.length,
+            directReferralsNames: directReferrals.map(u => u.name),
+            totalNetworkSize: uniqueDownline.length,
+            downlineNames: uniqueDownline.map(u => u.name),
+        });
         
         const totalNetworkSales = networkTickets.reduce((sum, ticket) => {
             // NOTE: This is an approximation based on ticketPrice.
@@ -32,7 +51,7 @@ const ReferralStats: React.FC<ReferralStatsProps> = ({ currentUser, users, ticke
 
         return {
             directReferrals,
-            totalNetworkSize: downline.length,
+            totalNetworkSize: uniqueDownline.length,
             totalNetworkSales,
         };
     }, [currentUser, users, tickets, raffles]);

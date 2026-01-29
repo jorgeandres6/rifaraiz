@@ -553,40 +553,8 @@ const App: React.FC = () => {
           totalPrice: totalCost,
         });
 
-        // Calculate and create commissions for upline
-        const uplineIds = currentUser.upline || [];
-        console.log('🔍 DEBUG Comisiones:', {
-          buyerId: currentUser.id,
-          buyerName: currentUser.name,
-          upline: uplineIds,
-          uplineLength: uplineIds.length,
-          totalCost,
-        });
-        
-        if (uplineIds.length > 0) {
-          const newCommissions = calculateCommissions(totalCost, currentUser.id, uplineIds, raffleId);
-          console.log('💰 Comisiones calculadas:', newCommissions.map(c => ({
-            nivel: c.level,
-            usuario: c.userId,
-            monto: c.amount,
-          })));
-          
-          // Save each commission to Firestore
-          for (const commission of newCommissions) {
-            await Commissions.add(commission);
-            console.log(`✅ Comisión guardada: Nivel ${commission.level} - $${commission.amount.toFixed(2)} para ${commission.userId}`);
-          }
-          
-          // Update local state
-          const commissionsWithIds = newCommissions.map((c, idx) => ({
-            id: `cm_${Date.now()}_${idx}`,
-            ...c,
-            date: new Date(),
-          }));
-          setCommissions(prev => [...prev, ...commissionsWithIds]);
-        } else {
-          console.log('⚠️ No se crean comisiones: upline vacío');
-        }
+        // Note: Commissions will be created when the order is VERIFIED by admin
+        console.log('📋 Orden de compra creada. Las comisiones se generarán al verificar.');
       }
       
       showToast(`Orden de compra creada. Espera la verificación del administrador.`, 'success');

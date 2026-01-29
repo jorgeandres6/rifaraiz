@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { Raffle, Ticket, Commission, User, UserRole, TicketPack, Notification, UserPrize, PurchaseOrder } from '../types';
 import { generateRaffleContent } from '../services/geminiService';
-import { Users } from '../services/firestore';
+import { Users, Commissions } from '../services/firestore';
 import { SparklesIcon, PlusCircleIcon, TicketIcon, CurrencyDollarIcon, ClipboardListIcon, GiftIcon, DocumentChartBarIcon, UsersIcon, PencilIcon, XIcon, ShareIcon, TrophyIcon, InformationCircleIcon, MailIcon, PaperAirplaneIcon, BuildingStoreIcon, LockClosedIcon } from './icons';
 import ReportModal from './ReportModal';
 import LeaderboardsPage from './LeaderboardsPage';
@@ -1113,7 +1113,24 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
     );
   };
 
-const ReferralNetworkStats: React.FC<{ users: User[], tickets: Ticket[], raffles: Raffle[] }> = ({ users, tickets, raffles }) => {
+const ReferralNetworkStats: React.FC<{ users: User[], tickets: Ticket[], raffles: Raffle[], commissions: Commission[] }> = ({ users, tickets, raffles, commissions }) => {
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+    const [updatingCommission, setUpdatingCommission] = useState<string | null>(null);
+
+    const handleToggleCommissionStatus = async (commissionId: string, currentStatus: string) => {
+        setUpdatingCommission(commissionId);
+        try {
+            const newStatus = currentStatus === 'PAID' ? 'PENDING' : 'PAID';
+            await Commissions.update(commissionId, { status: newStatus });
+            console.log(`Comisión ${commissionId} actualizada a ${newStatus}`);
+        } catch (error) {
+            console.error('Error actualizando comisión:', error);
+            alert('Error al actualizar el estado de la comisión');
+        } finally {
+            setUpdatingCommission(null);
+        }
+    };
+
     const networkStats = useMemo(() => {
         const rafflePriceMap = raffles.reduce((acc, r) => {
             acc[r.id] = r.ticketPrice;
@@ -1121,9 +1138,19 @@ const ReferralNetworkStats: React.FC<{ users: User[], tickets: Ticket[], raffles
         }, {} as Record<string, number>);
 
         return users.map(user => {
-            const downline = users.filter(u => u.upline?.includes(user.id));
             const directReferrals = users.filter(u => u.referredBy === user.id);
-            const downlineIds = downline.map(u => u.id);
+            
+            // Build complete downline recursively (direct + all indirect referrals)
+            const getAllDownline = (userId: string): User[] => {
+                const direct = users.filter(u => u && u.referredBy === userId);
+                const indirect = direct.flatMap(u => getAllDownline(u.id));
+                return [...direct, ...indirect];
+            };
+
+            const fullDownline = getAllDownline(user.id);
+            // Remove duplicates using Map
+            const uniqueDownline = Array.from(new Map(fullDownline.map(u => [u.id, u])).values());
+            const downlineIds = uniqueDownline.map(u => u.id);
 
             const networkTickets = tickets.filter(t => downlineIds.includes(t.userId));
             
@@ -1131,42 +1158,227 @@ const ReferralNetworkStats: React.FC<{ users: User[], tickets: Ticket[], raffles
                 return sum + (rafflePriceMap[ticket.raffleId] || 0);
             }, 0);
             
+            // Calculate commissions for this user
+            const userCommissions = commissions.filter(c => c.userId === user.id);
+            const pendingCommissions = userCommissions
+                .filter(c => c.status === 'PENDING')
+                .reduce((sum, c) => sum + c.amount, 0);
+            const paidCommissions = userCommissions
+                .filter(c => c.status === 'PAID')
+                .reduce((sum, c) => sum + c.amount, 0);
+            
             return {
                 userId: user.id,
                 name: user.name,
                 referralCode: user.referralCode,
                 directReferralsCount: directReferrals.length,
-                totalNetworkSize: downline.length,
+                totalNetworkSize: uniqueDownline.length,
                 totalNetworkSales,
+                pendingCommissions,
+                paidCommissions,
             };
         });
-    }, [users, tickets, raffles]);
+    }, [users, tickets, raffles, commissions]);
+
+    const selectedUser = selectedUserId ? users.find(u => u.id === selectedUserId) : null;
+    const selectedUserCommissions = selectedUserId 
+        ? commissions.filter(c => c.userId === selectedUserId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        : [];
 
     return (
-      <div className="overflow-x-auto bg-gray-900/50 rounded-md border border-gray-700">
-        <table className="w-full text-sm text-left text-gray-300">
-          <thead className="text-xs text-gray-400 uppercase bg-gray-700/50">
-            <tr>
-              <th scope="col" className="px-6 py-3">Usuario</th>
-              <th scope="col" className="px-6 py-3">Cód. Referido</th>
-              <th scope="col" className="px-6 py-3 text-center">Referidos Directos</th>
-              <th scope="col" className="px-6 py-3 text-center">Tamaño Total de Red</th>
-              <th scope="col" className="px-6 py-3 text-right">Ventas Totales de Red ($)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {networkStats.map(stat => (
-              <tr key={stat.userId} className="border-b border-gray-700 hover:bg-gray-700/30">
-                <td className="px-6 py-4 font-medium text-white">{stat.name}</td>
-                <td className="px-6 py-4 font-mono">{stat.referralCode}</td>
-                <td className="px-6 py-4 text-center">{stat.directReferralsCount}</td>
-                <td className="px-6 py-4 text-center">{stat.totalNetworkSize}</td>
-                <td className="px-6 py-4 text-right font-semibold text-green-400">${stat.totalNetworkSales.toLocaleString()}</td>
+      <>
+        <div className="overflow-x-auto bg-gray-900/50 rounded-md border border-gray-700">
+          <table className="w-full text-sm text-left text-gray-300">
+            <thead className="text-xs text-gray-400 uppercase bg-gray-700/50">
+              <tr>
+                <th scope="col" className="px-6 py-3">Usuario</th>
+                <th scope="col" className="px-6 py-3">Cód. Referido</th>
+                <th scope="col" className="px-6 py-3 text-center">Referidos Directos</th>
+                <th scope="col" className="px-6 py-3 text-center">Tamaño Total de Red</th>
+                <th scope="col" className="px-6 py-3 text-right">Ventas Totales de Red ($)</th>
+                <th scope="col" className="px-6 py-3 text-right">Comisiones Pendientes ($)</th>
+                <th scope="col" className="px-6 py-3 text-right">Comisiones Pagadas ($)</th>
+                <th scope="col" className="px-6 py-3 text-center">Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {networkStats.map(stat => (
+                <tr key={stat.userId} className="border-b border-gray-700 hover:bg-gray-700/30">
+                  <td className="px-6 py-4 font-medium text-white">{stat.name}</td>
+                  <td className="px-6 py-4 font-mono">{stat.referralCode}</td>
+                  <td className="px-6 py-4 text-center">{stat.directReferralsCount}</td>
+                  <td className="px-6 py-4 text-center">{stat.totalNetworkSize}</td>
+                  <td className="px-6 py-4 text-right font-semibold text-green-400">${stat.totalNetworkSales.toLocaleString()}</td>
+                  <td className="px-6 py-4 text-right font-semibold text-yellow-400">${stat.pendingCommissions.toFixed(2)}</td>
+                  <td className="px-6 py-4 text-right font-semibold text-blue-400">${stat.paidCommissions.toFixed(2)}</td>
+                  <td className="px-6 py-4 text-center">
+                    <button
+                      onClick={() => setSelectedUserId(stat.userId)}
+                      className="text-indigo-400 hover:text-indigo-300 font-medium text-sm"
+                    >
+                      Ver Historial
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Commission History Modal */}
+        {selectedUser && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+            <div className="bg-gray-800 rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+              {/* Header */}
+              <div className="p-6 border-b border-gray-700 flex justify-between items-center">
+                <div>
+                  <h3 className="text-2xl font-bold text-white">Historial de Comisiones</h3>
+                  <p className="text-gray-400 mt-1">
+                    {selectedUser.name} ({selectedUser.referralCode})
+                  </p>
+                </div>
+                <button
+                  onClick={() => setSelectedUserId(null)}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  <XIcon className="h-6 w-6" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 overflow-y-auto flex-1">
+                {selectedUserCommissions.length === 0 ? (
+                  <p className="text-gray-400 text-center py-8">
+                    Este usuario aún no tiene comisiones registradas.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {selectedUserCommissions.map((commission) => {
+                      const sourceUser = users.find(u => u.id === commission.sourceUserId);
+                      const raffle = raffles.find(r => r.id === commission.raffleId);
+                      const isPaid = commission.status === 'PAID';
+
+                      return (
+                        <div
+                          key={commission.id}
+                          className={`p-4 rounded-lg border-2 ${
+                            isPaid 
+                              ? 'bg-blue-900/20 border-blue-500/30' 
+                              : 'bg-yellow-900/20 border-yellow-500/30'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                  isPaid 
+                                    ? 'bg-blue-500 text-white' 
+                                    : 'bg-yellow-500 text-gray-900'
+                                }`}>
+                                  {isPaid ? '✓ PAGADO' : '⏳ POR PAGAR'}
+                                </span>
+                                <span className="text-xs text-gray-400">
+                                  {new Date(commission.date).toLocaleDateString('es-ES', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </span>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                                <div>
+                                  <span className="text-gray-400">Monto:</span>
+                                  <span className="ml-2 font-bold text-green-400">
+                                    ${commission.amount.toFixed(2)}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-400">Nivel:</span>
+                                  <span className="ml-2 text-white font-semibold">
+                                    Nivel {commission.level}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-400">Generado por:</span>
+                                  <span className="ml-2 text-white">
+                                    {sourceUser?.name || 'Usuario desconocido'}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-400">Rifa:</span>
+                                  <span className="ml-2 text-white">
+                                    {raffle?.title || 'Rifa no encontrada'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Toggle Payment Button */}
+                            <div className="flex-shrink-0">
+                              <button
+                                onClick={() => handleToggleCommissionStatus(commission.id, commission.status)}
+                                disabled={updatingCommission === commission.id}
+                                className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                                  isPaid
+                                    ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                              >
+                                {updatingCommission === commission.id ? (
+                                  'Actualizando...'
+                                ) : isPaid ? (
+                                  'Marcar Pendiente'
+                                ) : (
+                                  'Marcar Pagado'
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer with Summary */}
+              {selectedUserCommissions.length > 0 && (
+                <div className="p-6 border-t border-gray-700 bg-gray-900/50">
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <p className="text-xs text-gray-400 mb-1">Total Comisiones</p>
+                      <p className="text-xl font-bold text-white">
+                        {selectedUserCommissions.length}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400 mb-1">Por Pagar</p>
+                      <p className="text-xl font-bold text-yellow-400">
+                        ${selectedUserCommissions
+                          .filter(c => c.status === 'PENDING')
+                          .reduce((sum, c) => sum + c.amount, 0)
+                          .toFixed(2)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400 mb-1">Pagado</p>
+                      <p className="text-xl font-bold text-blue-400">
+                        ${selectedUserCommissions
+                          .filter(c => c.status === 'PAID')
+                          .reduce((sum, c) => sum + c.amount, 0)
+                          .toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </>
     );
 };
 
@@ -1253,7 +1465,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onAddRaffle, raffles, tickets, 
             {activeTab === 'create' && <CreateRaffleForm onAddRaffle={onAddRaffle} />}
             {activeTab === 'stats' && <StatsDashboard raffles={raffles} tickets={tickets} commissions={commissions} users={users} />}
             {activeTab === 'users' && <UserManagement users={users} onUpdateUser={onUpdateUser} onAddNotification={onAddNotification} />}
-            {activeTab === 'network' && <ReferralNetworkStats users={users} tickets={tickets} raffles={raffles}/>}
+            {activeTab === 'network' && <ReferralNetworkStats users={users} tickets={tickets} raffles={raffles} commissions={commissions}/>}
             {activeTab === 'orders' && (
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
