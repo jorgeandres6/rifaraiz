@@ -132,8 +132,8 @@ const UserPurchaseOrders: React.FC<UserPurchaseOrdersProps> = ({
                   {getStatusLabel(order.status)}
                 </span>
               </div>
-              <p className="text-sm text-gray-600">
-                Orden #{order.id.substring(0, 8).toUpperCase()}
+              <p className="text-sm text-gray-600 font-mono text-indigo-600 font-bold">
+                {order.orderCode}
               </p>
             </div>
             <div className="text-right">

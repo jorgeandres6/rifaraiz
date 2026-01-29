@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { PurchaseOrder, User, Raffle, PurchaseOrderStatus } from '../types';
-import { PurchaseOrders, RouletteChances } from '../services/firestore';
+import { PurchaseOrder, User, Raffle, PurchaseOrderStatus, Ticket } from '../types';
+import { PurchaseOrders, RouletteChances, Tickets } from '../services/firestore';
 import { XIcon, CheckCircleIcon, ExclamationTriangleIcon, DocumentTextIcon, ClockIcon } from './icons';
 
 interface PurchaseOrdersModalProps {
@@ -45,16 +45,49 @@ const PurchaseOrdersModal: React.FC<PurchaseOrdersModalProps> = ({
   };
 
   const handleVerifyOrder = async (order: PurchaseOrder) => {
-    // Simulating ticket generation - in real implementation this would create actual tickets
     setGeneratingTickets(true);
     try {
-      // Generate ticket IDs (normally these would come from ticket creation)
-      const ticketIds = Array.from({ length: order.quantity }, (_, i) =>
-        `TICKET-${order.id}-${i + 1}`
-      );
+      const raffle = raffles.find(r => r.id === order.raffleId);
+      if (!raffle) {
+        throw new Error('Rifa no encontrada');
+      }
+
+      // Get the user's referral code
+      const user = users.find(u => u.id === order.userId);
+      const userReferralCode = user?.referralCode || 'UNKNOWN';
+
+      // Generate ticket IDs and create ticket objects
+      const ticketIds: string[] = [];
+      const ticketsToCreate: Partial<Ticket>[] = [];
+
+      for (let i = 0; i < order.quantity; i++) {
+        const ticketId = `t_${order.id}_${i + 1}`;
+        const ticketNumber = `${userReferralCode}-${i + 1}`;
+        
+        ticketIds.push(ticketId);
+        ticketsToCreate.push({
+          id: ticketId,
+          raffleId: order.raffleId,
+          userId: order.userId,
+          purchaseDate: new Date(),
+          ticketNumber: ticketNumber,
+          originalUserId: order.userId,
+          transferCount: 0,
+          purchasedPackInfo: order.packId ? {
+            quantity: order.quantity,
+            price: order.totalPrice / order.quantity,
+          } : undefined,
+        });
+      }
+
       setTicketsGenerated(ticketIds);
 
-      // Update order in Firestore
+      // Create all tickets in batch
+      if (ticketsToCreate.length > 0) {
+        await Tickets.addBatch(ticketsToCreate);
+      }
+
+      // Update order in Firestore with verification
       await PurchaseOrders.verify(order.id, ticketIds, currentUser.id);
 
       // Increment roulette chances for the user based on quantity
@@ -69,7 +102,7 @@ const PurchaseOrdersModal: React.FC<PurchaseOrdersModalProps> = ({
       setTicketsGenerated([]);
     } catch (error) {
       console.error('Error verifying order:', error);
-      alert('Error al verificar la orden');
+      alert('Error al verificar la orden: ' + (error instanceof Error ? error.message : String(error)));
     } finally {
       setGeneratingTickets(false);
     }
@@ -202,8 +235,12 @@ const PurchaseOrdersModal: React.FC<PurchaseOrdersModalProps> = ({
               <div className="bg-gray-50 rounded-lg p-6 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
+                    <p className="text-xs text-gray-500 uppercase font-semibold">Código de Orden</p>
+                    <p className="text-lg font-bold text-indigo-600 font-mono">{selectedOrder.orderCode}</p>
+                  </div>
+                  <div>
                     <p className="text-xs text-gray-500 uppercase font-semibold">ID de Orden</p>
-                    <p className="text-lg font-bold text-gray-900">{selectedOrder.id}</p>
+                    <p className="text-sm font-mono text-gray-600">{selectedOrder.id}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 uppercase font-semibold">Usuario</p>

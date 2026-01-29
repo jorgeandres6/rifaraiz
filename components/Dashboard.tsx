@@ -210,20 +210,32 @@ const Dashboard: React.FC<DashboardProps> = ({
                                               </p>
                                               <p className={`text-sm font-medium ${isRedeemed ? 'text-gray-400' : 'text-yellow-300'}`}>
                                                   {isRedeemed && prize.redeemedDate
-                                                      ? prize.redeemedDate.toLocaleDateString('es-ES', {
+                                                      ? prize.redeemedDate instanceof Date ? prize.redeemedDate.toLocaleDateString('es-ES', {
+                                                          year: 'numeric',
+                                                          month: 'long',
+                                                          day: 'numeric',
+                                                          hour: '2-digit',
+                                                          minute: '2-digit'
+                                                      }) : new Date(prize.redeemedDate).toLocaleDateString('es-ES', {
                                                           year: 'numeric',
                                                           month: 'long',
                                                           day: 'numeric',
                                                           hour: '2-digit',
                                                           minute: '2-digit'
                                                       })
-                                                      : prize.dateWon.toLocaleDateString('es-ES', {
+                                                      : prize.dateWon ? (prize.dateWon instanceof Date ? prize.dateWon.toLocaleDateString('es-ES', {
                                                           year: 'numeric',
                                                           month: 'long',
                                                           day: 'numeric',
                                                           hour: '2-digit',
                                                           minute: '2-digit'
-                                                      })
+                                                      }) : new Date(prize.dateWon).toLocaleDateString('es-ES', {
+                                                          year: 'numeric',
+                                                          month: 'long',
+                                                          day: 'numeric',
+                                                          hour: '2-digit',
+                                                          minute: '2-digit'
+                                                      })) : 'N/A'
                                                   }
                                               </p>
                                           </div>

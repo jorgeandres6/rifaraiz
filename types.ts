@@ -132,6 +132,7 @@ export interface RouletteChance {
 
 export interface PurchaseOrder {
   id: string;
+  orderCode: string; // Unique code for the order (displayed to users and admins)
   userId: string; // Who made the purchase
   raffleId: string;
   packId?: string; // Reference to the specific ticket pack

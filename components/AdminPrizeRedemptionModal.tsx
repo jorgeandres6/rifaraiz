@@ -57,7 +57,7 @@ const AdminPrizeRedemptionModal: React.FC<AdminPrizeRedemptionModalProps> = ({
     if (redeemedPrize) {
       setFoundPrize(redeemedPrize);
       const redeemedBy = redeemedPrize.redeemedByAdminId ? getUserName(redeemedPrize.redeemedByAdminId) : 'Desconocido';
-      const redeemedDate = redeemedPrize.redeemedDate ? new Date(redeemedPrize.redeemedDate).toLocaleDateString('es-ES') : 'Desconocida';
+      const redeemedDate = redeemedPrize.redeemedDate ? (redeemedPrize.redeemedDate instanceof Date ? redeemedPrize.redeemedDate.toLocaleDateString('es-ES') : new Date(redeemedPrize.redeemedDate).toLocaleDateString('es-ES')) : 'Desconocida';
       setMessage({ text: `Este premio ya fue canjeado el ${redeemedDate} por ${redeemedBy}`, type: 'error' });
       return;
     }
@@ -159,13 +159,19 @@ const AdminPrizeRedemptionModal: React.FC<AdminPrizeRedemptionModalProps> = ({
                   </p>
                   <p className="text-sm text-gray-300">
                     <span className="font-medium text-yellow-400">Ganado:</span>{' '}
-                    {new Date(foundPrize.dateWon).toLocaleDateString('es-MX', {
+                    {foundPrize.dateWon ? (foundPrize.dateWon instanceof Date ? foundPrize.dateWon.toLocaleDateString('es-MX', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',
                       hour: '2-digit',
                       minute: '2-digit'
-                    })}
+                    }) : new Date(foundPrize.dateWon).toLocaleDateString('es-MX', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })) : 'N/A'}
                   </p>
                   <p className="text-sm text-gray-300">
                     <span className="font-medium text-yellow-400">Código:</span>{' '}
@@ -180,7 +186,13 @@ const AdminPrizeRedemptionModal: React.FC<AdminPrizeRedemptionModalProps> = ({
                       {foundPrize.redeemedDate && (
                         <p className="text-sm text-gray-300">
                           <span className="font-medium text-yellow-400">Fecha de canje:</span>{' '}
-                          {new Date(foundPrize.redeemedDate).toLocaleDateString('es-MX', {
+                          {foundPrize.redeemedDate instanceof Date ? foundPrize.redeemedDate.toLocaleDateString('es-MX', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          }) : new Date(foundPrize.redeemedDate).toLocaleDateString('es-MX', {
                             year: 'numeric',
                             month: 'long',
                             day: 'numeric',

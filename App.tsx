@@ -161,10 +161,17 @@ const App: React.FC = () => {
       });
 
       userPrizesUnsub = UserPrizes.listen((items: any[]) => {
+        const convertTimestamp = (ts: any) => {
+          if (!ts) return undefined;
+          if (ts instanceof Date) return ts;
+          if (typeof ts === 'object' && typeof ts.toDate === 'function') return ts.toDate();
+          if (typeof ts === 'number') return new Date(ts);
+          return undefined;
+        };
         const parsed = items.map((p: any) => ({
           ...p,
-          dateWon: p.dateWon && typeof p.dateWon === 'object' && typeof p.dateWon.toDate === 'function' ? p.dateWon.toDate() : p.dateWon,
-          redeemedDate: p.redeemedDate && typeof p.redeemedDate === 'object' && typeof p.redeemedDate.toDate === 'function' ? p.redeemedDate.toDate() : p.redeemedDate,
+          dateWon: convertTimestamp(p.dateWon),
+          redeemedDate: convertTimestamp(p.redeemedDate),
         }));
         setUserPrizes(parsed);
       });
@@ -505,9 +512,17 @@ const App: React.FC = () => {
 
     const purchasedPackInfo = raffle.ticketPacks?.find(p => p.quantity === amount && Math.abs(p.price - totalCost) < 0.005);
 
+    // Generate unique order code (e.g., ORD-20260128-ABCD1234)
+    const generateOrderCode = () => {
+      const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const random = Math.random().toString(36).substring(2, 10).toUpperCase();
+      return `ORD-${date}-${random}`;
+    };
+
     // Create a purchase order instead of creating tickets directly
     const newPurchaseOrder: PurchaseOrder = {
       id: `po_${Date.now()}`,
+      orderCode: generateOrderCode(),
       userId: currentUser.id,
       raffleId: raffleId,
       packId: purchasedPackInfo ? `pack_${purchasedPackInfo.quantity}_${purchasedPackInfo.price}` : undefined,
@@ -525,6 +540,7 @@ const App: React.FC = () => {
       const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
       if (firebaseConfigured) {
         await PurchaseOrders.add({
+          orderCode: newPurchaseOrder.orderCode,
           userId: currentUser.id,
           raffleId: raffleId,
           packId: purchasedPackInfo ? `pack_${purchasedPackInfo.quantity}_${purchasedPackInfo.price}` : undefined,
