@@ -735,11 +735,26 @@ const App: React.FC = () => {
     }
   };
   
-  const handleUpdateRaffle = (updatedRaffle: Raffle) => {
+  const handleUpdateRaffle = async (updatedRaffle: Raffle) => {
     if (currentUser?.role !== UserRole.ADMIN) return;
+    
+    // Update local state immediately (optimistic update)
     setRaffles(prevRaffles => prevRaffles.map(raffle => 
       raffle.id === updatedRaffle.id ? updatedRaffle : raffle
     ));
+
+    // Save to Firestore if configured
+    const firebaseConfigured = import.meta.env && import.meta.env.VITE_FIREBASE_PROJECT_ID;
+    if (firebaseConfigured) {
+      try {
+        const { id, ...raffleData } = updatedRaffle as any;
+        await updateDocument('raffles', updatedRaffle.id, raffleData);
+        console.log('Raffle updated in Firestore:', updatedRaffle.id);
+      } catch (err) {
+        console.error('Error updating raffle in Firestore:', err);
+        showToast('Error actualizando rifa en Firestore', 'error');
+      }
+    }
   };
 
   const handleUpdateUser = async (updatedUser: User) => {
