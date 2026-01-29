@@ -35,7 +35,7 @@ const PurchaseOrdersModal: React.FC<PurchaseOrdersModalProps> = ({
   const filteredOrders = useMemo(
     () => purchaseOrders.filter(order => {
       const matchesTab = order.status === activeTab;
-      const matchesSearch = !searchCode || order.orderCode.toLowerCase().includes(searchCode.toLowerCase());
+      const matchesSearch = !searchCode || (order.orderCode || '').toLowerCase().includes(searchCode.toLowerCase());
       return matchesTab && matchesSearch;
     }),
     [purchaseOrders, activeTab, searchCode]
