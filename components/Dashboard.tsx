@@ -26,7 +26,7 @@ interface DashboardProps {
   onPrizeWon: (prize: ExtraPrize, raffleId: string) => Promise<void>;
   onCloseRoulette: () => void;
   onAddNotification: (notification: Omit<Notification, 'id' | 'date' | 'read'>) => void;
-  onRedeemPrize?: (prizeId: string, code: string) => boolean;
+  onRedeemPrize?: (prizeId: string, code: string, adminId: string) => boolean;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({

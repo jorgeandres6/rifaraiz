@@ -201,6 +201,7 @@ export type UserPrizeDoc = {
   dateWon?: any;
   redeemed?: boolean;
   redeemedDate?: any;
+  redeemedByAdminId?: string;
   code: string;
   [k: string]: any;
 };
@@ -221,5 +222,54 @@ export const UserPrizes = {
 
 // Re-export serverTimestamp for callers that want to use it
 export { serverTimestamp };
+
+// --- PurchaseOrders helpers ---
+export type PurchaseOrderDoc = {
+  userId: string;
+  raffleId: string;
+  packId?: string;
+  quantity: number;
+  totalPrice: number;
+  status?: string;
+  createdAt?: any;
+  paidAt?: any;
+  paidByAdminId?: string;
+  verifiedAt?: any;
+  verifiedByAdminId?: string;
+  rejectionReason?: string;
+  rejectedByAdminId?: string;
+  ticketIds?: string[];
+  [k: string]: any;
+};
+
+export const PurchaseOrders = {
+  getAll: (constraints?: QueryConstraint[]) => getCollection<PurchaseOrderDoc>("purchaseOrders", constraints as any),
+  listen: (onChange: (items: Array<PurchaseOrderDoc & { id: string }>) => void, constraints?: QueryConstraint[]) => listenCollection<PurchaseOrderDoc>("purchaseOrders", onChange, constraints),
+  get: (id: string) => getDocument<PurchaseOrderDoc>("purchaseOrders", id),
+  add: (data: Partial<PurchaseOrderDoc>) => {
+    const prepared = sanitizeForFirestore({ ...data, createdAt: serverTimestamp(), status: 'PENDING' });
+    return addDocument<PurchaseOrderDoc>("purchaseOrders", prepared as PurchaseOrderDoc);
+  },
+  update: (id: string, partial: Partial<PurchaseOrderDoc>) => {
+    const prepared = sanitizeForFirestore(partial);
+    return updateDocument("purchaseOrders", id, prepared as any);
+  },
+  markAsPaid: (id: string, adminId: string) => {
+    const prepared = sanitizeForFirestore({ status: 'PAID', paidAt: serverTimestamp(), paidByAdminId: adminId });
+    return updateDocument("purchaseOrders", id, prepared as any);
+  },
+  verify: (id: string, ticketIds: string[], adminId: string) => {
+    const prepared = sanitizeForFirestore({ status: 'VERIFIED', verifiedAt: serverTimestamp(), verifiedByAdminId: adminId, ticketIds });
+    return updateDocument("purchaseOrders", id, prepared as any);
+  },
+  reject: (id: string, rejectionReason: string, adminId: string) => {
+    const prepared = sanitizeForFirestore({ status: 'REJECTED', rejectionReason, rejectedByAdminId: adminId });
+    return updateDocument("purchaseOrders", id, prepared as any);
+  },
+  cancel: (id: string) => {
+    const prepared = sanitizeForFirestore({ status: 'CANCELLED' });
+    return updateDocument("purchaseOrders", id, prepared as any);
+  },
+};
 
 

@@ -683,7 +683,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleRedeemPrize = async (prizeId: string, code: string) => {
+  const handleRedeemPrize = async (prizeId: string, code: string, adminId: string) => {
     // Only admins can redeem prizes
     if (!currentUser || currentUser.role !== UserRole.ADMIN) {
       showToast('Solo administradores pueden canjear premios', 'error');
@@ -711,7 +711,7 @@ const App: React.FC = () => {
     setUserPrizes(prev => 
       prev.map(p => 
         p.id === prizeId 
-          ? { ...p, redeemed: true, redeemedDate: new Date() }
+          ? { ...p, redeemed: true, redeemedDate: new Date(), redeemedByAdminId: adminId }
           : p
       )
     );
@@ -723,6 +723,7 @@ const App: React.FC = () => {
         await UserPrizes.update(prizeId, {
           redeemed: true,
           redeemedDate: new Date(),
+          redeemedByAdminId: adminId,
         });
       }
     } catch (err) {

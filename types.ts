@@ -10,6 +10,14 @@ export enum CommissionStatus {
   PAID = 'PAID',
 }
 
+export enum PurchaseOrderStatus {
+  PENDING = 'PENDING', // Waiting for payment
+  PAID = 'PAID', // Payment received
+  VERIFIED = 'VERIFIED', // Admin verified and tickets assigned
+  REJECTED = 'REJECTED', // Admin rejected the order
+  CANCELLED = 'CANCELLED', // User cancelled
+}
+
 export interface BankAccount {
   bankName: string;
   accountType: 'ahorro' | 'corriente';
@@ -101,6 +109,7 @@ export interface UserPrize {
   dateWon: Date;
   redeemed?: boolean; // Whether the prize has been claimed/redeemed
   redeemedDate?: Date; // Date when the prize was redeemed
+  redeemedByAdminId?: string; // Admin who redeemed the prize
   code: string; // Unique code to redeem the prize
 }
 
@@ -111,4 +120,22 @@ export interface Notification {
   message: string;
   date: Date;
   read: boolean;
+}
+
+export interface PurchaseOrder {
+  id: string;
+  userId: string; // Who made the purchase
+  raffleId: string;
+  packId?: string; // Reference to the specific ticket pack
+  quantity: number; // Number of tickets
+  totalPrice: number; // Total price in dollars
+  status: PurchaseOrderStatus;
+  createdAt: Date;
+  paidAt?: Date;
+  paidByAdminId?: string; // Admin who marked as paid
+  verifiedAt?: Date;
+  verifiedByAdminId?: string; // Admin who verified the order
+  rejectionReason?: string;
+  rejectedByAdminId?: string; // Admin who rejected the order
+  ticketIds?: string[]; // IDs of tickets created when verified
 }

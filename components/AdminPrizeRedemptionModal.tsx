@@ -7,7 +7,8 @@ interface AdminPrizeRedemptionModalProps {
   onClose: () => void;
   userPrizes: UserPrize[];
   users?: User[];
-  onRedeemPrize: (prizeId: string, code: string) => boolean;
+  currentUser: User;
+  onRedeemPrize: (prizeId: string, code: string, adminId: string) => boolean;
 }
 
 const AdminPrizeRedemptionModal: React.FC<AdminPrizeRedemptionModalProps> = ({
@@ -15,6 +16,7 @@ const AdminPrizeRedemptionModal: React.FC<AdminPrizeRedemptionModalProps> = ({
   onClose,
   userPrizes,
   users = [],
+  currentUser,
   onRedeemPrize,
 }) => {
   const [code, setCode] = useState<string>('');
@@ -40,15 +42,27 @@ const AdminPrizeRedemptionModal: React.FC<AdminPrizeRedemptionModalProps> = ({
       return;
     }
 
+    // First try to find in unredeemed
     const prize = unredeemed.find(p => p.code.toUpperCase() === code.toUpperCase());
     
-    if (!prize) {
-      setMessage({ text: 'No se encontró ningún premio con este código o ya fue canjeado', type: 'error' });
+    if (prize) {
+      setFoundPrize(prize);
+      setMessage({ text: 'Premio encontrado. Confirma para canjear', type: 'info' });
       return;
     }
 
-    setFoundPrize(prize);
-    setMessage({ text: 'Premio encontrado. Confirma para canjear', type: 'info' });
+    // Check if it was already redeemed
+    const redeemedPrize = userPrizes.find(p => p.redeemed && p.code.toUpperCase() === code.toUpperCase());
+    
+    if (redeemedPrize) {
+      setFoundPrize(redeemedPrize);
+      const redeemedBy = redeemedPrize.redeemedByAdminId ? getUserName(redeemedPrize.redeemedByAdminId) : 'Desconocido';
+      const redeemedDate = redeemedPrize.redeemedDate ? new Date(redeemedPrize.redeemedDate).toLocaleDateString('es-ES') : 'Desconocida';
+      setMessage({ text: `Este premio ya fue canjeado el ${redeemedDate} por ${redeemedBy}`, type: 'error' });
+      return;
+    }
+    
+    setMessage({ text: 'No se encontró ningún premio con este código', type: 'error' });
   };
 
   const handleRedeem = () => {
@@ -57,7 +71,7 @@ const AdminPrizeRedemptionModal: React.FC<AdminPrizeRedemptionModalProps> = ({
       return;
     }
 
-    const success = onRedeemPrize(foundPrize.id, code);
+    const success = onRedeemPrize(foundPrize.id, code, currentUser.id);
     if (success) {
       setMessage({ text: 'Premio canjeado exitosamente', type: 'success' });
       setCode('');
@@ -157,6 +171,26 @@ const AdminPrizeRedemptionModal: React.FC<AdminPrizeRedemptionModalProps> = ({
                     <span className="font-medium text-yellow-400">Código:</span>{' '}
                     <span className="font-mono text-yellow-300">{foundPrize.code}</span>
                   </p>
+                  {foundPrize.redeemed && foundPrize.redeemedByAdminId && (
+                    <div className="mt-3 pt-3 border-t border-yellow-500/30">
+                      <p className="text-sm text-gray-300">
+                        <span className="font-medium text-yellow-400">Canjeado por:</span>{' '}
+                        {getUserName(foundPrize.redeemedByAdminId)}
+                      </p>
+                      {foundPrize.redeemedDate && (
+                        <p className="text-sm text-gray-300">
+                          <span className="font-medium text-yellow-400">Fecha de canje:</span>{' '}
+                          {new Date(foundPrize.redeemedDate).toLocaleDateString('es-MX', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -181,10 +215,10 @@ const AdminPrizeRedemptionModal: React.FC<AdminPrizeRedemptionModalProps> = ({
             <div className="flex gap-3 pt-4">
               <button
                 onClick={handleRedeem}
-                disabled={!foundPrize}
+                disabled={!foundPrize || foundPrize.redeemed}
                 className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 px-4 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Confirmar Canje
+                {foundPrize?.redeemed ? 'Premio Ya Canjeado' : 'Confirmar Canje'}
               </button>
               <button
                 onClick={onClose}

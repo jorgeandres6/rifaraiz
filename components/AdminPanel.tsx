@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Raffle, Ticket, Commission, User, UserRole, TicketPack, Notification, UserPrize } from '../types';
+import { Raffle, Ticket, Commission, User, UserRole, TicketPack, Notification, UserPrize, PurchaseOrder } from '../types';
 import { generateRaffleContent } from '../services/geminiService';
 import { Users } from '../services/firestore';
 import { SparklesIcon, PlusCircleIcon, TicketIcon, CurrencyDollarIcon, ClipboardListIcon, GiftIcon, DocumentChartBarIcon, UsersIcon, PencilIcon, XIcon, ShareIcon, TrophyIcon, InformationCircleIcon, MailIcon, PaperAirplaneIcon, BuildingStoreIcon, LockClosedIcon } from './icons';
@@ -8,6 +8,7 @@ import ReportModal from './ReportModal';
 import LeaderboardsPage from './LeaderboardsPage';
 import EditRaffleModal from './EditRaffleModal';
 import AdminPrizeRedemptionModal from './AdminPrizeRedemptionModal';
+import PurchaseOrdersModal from './PurchaseOrdersModal';
 
 
 interface AdminPanelProps {
@@ -18,10 +19,11 @@ interface AdminPanelProps {
     commissions: Commission[];
     users: User[];
     userPrizes: UserPrize[];
+    purchaseOrders?: PurchaseOrder[];
     onUpdateUser: (updatedUser: User) => void;
     currentUser: User;
     onAddNotification: (notification: Omit<Notification, 'id' | 'date' | 'read'>) => void;
-    onRedeemPrize: (prizeId: string, code: string) => boolean;
+    onRedeemPrize: (prizeId: string, code: string, adminId: string) => boolean;
 }
 
 const CreateRaffleForm: React.FC<{ onAddRaffle: AdminPanelProps['onAddRaffle'] }> = ({ onAddRaffle }) => {
@@ -1189,11 +1191,12 @@ const ManageRafflesList: React.FC<{ raffles: Raffle[], onEdit: (raffle: Raffle) 
 );
 
 
-const AdminPanel: React.FC<AdminPanelProps> = ({ onAddRaffle, raffles, tickets, commissions, users, onUpdateUser, onUpdateRaffle, currentUser, onAddNotification, userPrizes, onRedeemPrize }) => {
+const AdminPanel: React.FC<AdminPanelProps> = ({ onAddRaffle, raffles, tickets, commissions, users, onUpdateUser, onUpdateRaffle, currentUser, onAddNotification, userPrizes, onRedeemPrize, purchaseOrders = [] }) => {
     const [activeTab, setActiveTab] = useState('stats');
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [raffleToEdit, setRaffleToEdit] = useState<Raffle | null>(null);
     const [isRedemptionModalOpen, setIsRedemptionModalOpen] = useState(false);
+    const [isPurchaseOrdersOpen, setIsPurchaseOrdersOpen] = useState(false);
 
     const handleEditRaffle = (raffle: Raffle) => {
         setRaffleToEdit(raffle);
@@ -1228,6 +1231,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onAddRaffle, raffles, tickets, 
                     <TrophyIcon className="h-5 w-5 mr-2" />
                     Leaderboards
                 </button>
+                <button onClick={() => setActiveTab('orders')} className={getTabClass('orders')}>
+                    <ClipboardListIcon className="h-5 w-5 mr-2" />
+                    Órdenes ({purchaseOrders.length})
+                </button>
                 <button onClick={() => setActiveTab('prizes')} className={getTabClass('prizes')}>
                     <GiftIcon className="h-5 w-5 mr-2" />
                     Canjear Premios
@@ -1247,6 +1254,28 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onAddRaffle, raffles, tickets, 
             {activeTab === 'stats' && <StatsDashboard raffles={raffles} tickets={tickets} commissions={commissions} users={users} />}
             {activeTab === 'users' && <UserManagement users={users} onUpdateUser={onUpdateUser} onAddNotification={onAddNotification} />}
             {activeTab === 'network' && <ReferralNetworkStats users={users} tickets={tickets} raffles={raffles}/>}
+            {activeTab === 'orders' && (
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h3 className="text-xl font-bold text-white">Órdenes de Compra</h3>
+                            <p className="text-gray-400 text-sm mt-1">
+                                Total de órdenes: {purchaseOrders.length} | 
+                                Pendientes: {purchaseOrders.filter(o => o.status === 'PENDING').length} | 
+                                Pagadas: {purchaseOrders.filter(o => o.status === 'PAID').length} | 
+                                Verificadas: {purchaseOrders.filter(o => o.status === 'VERIFIED').length}
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => setIsPurchaseOrdersOpen(true)}
+                            className="bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 px-4 rounded transition-colors flex items-center gap-2"
+                        >
+                            <ClipboardListIcon className="h-5 w-5" />
+                            Revisar Órdenes
+                        </button>
+                    </div>
+                </div>
+            )}
             {activeTab === 'prizes' && (
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
@@ -1287,8 +1316,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onAddRaffle, raffles, tickets, 
                 onClose={() => setIsRedemptionModalOpen(false)}
                 userPrizes={userPrizes}
                 users={users}
+                currentUser={currentUser}
                 onRedeemPrize={onRedeemPrize}
             />
+
+            {isPurchaseOrdersOpen && (
+                <PurchaseOrdersModal
+                    onClose={() => setIsPurchaseOrdersOpen(false)}
+                    purchaseOrders={purchaseOrders}
+                    users={users}
+                    raffles={raffles}
+                    currentUser={currentUser}
+                />
+            )}
         </div>
     );
 };
