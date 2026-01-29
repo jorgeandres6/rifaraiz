@@ -24,42 +24,56 @@ export function calculateCommissions(
 ): Omit<Commission, 'id' | 'date'>[] {
   const commissions: Omit<Commission, 'id' | 'date'>[] = [];
 
+  console.log('🧮 calculateCommissions llamada:', {
+    purchaseAmount,
+    buyerUserId,
+    uplineIds,
+    uplineCount: uplineIds.length,
+  });
+
   // Level 1: Direct referrer
   if (uplineIds.length > 0) {
-    commissions.push({
+    const commission = {
       userId: uplineIds[0],
       amount: purchaseAmount * COMMISSION_CONFIG.level1,
       status: CommissionStatus.PENDING,
       level: 1,
       sourceUserId: buyerUserId,
       raffleId: raffleId,
-    });
+    };
+    commissions.push(commission);
+    console.log(`  ✓ Nivel 1 creado: $${commission.amount.toFixed(2)} para ${commission.userId}`);
   }
 
   // Level 2: Indirect referrer (referrer's referrer)
   if (uplineIds.length > 1) {
-    commissions.push({
+    const commission = {
       userId: uplineIds[1],
       amount: purchaseAmount * COMMISSION_CONFIG.level2,
       status: CommissionStatus.PENDING,
       level: 2,
       sourceUserId: buyerUserId,
       raffleId: raffleId,
-    });
+    };
+    commissions.push(commission);
+    console.log(`  ✓ Nivel 2 creado: $${commission.amount.toFixed(2)} para ${commission.userId}`);
   }
 
   // Level 3: Two levels up
   if (uplineIds.length > 2) {
-    commissions.push({
+    const commission = {
       userId: uplineIds[2],
       amount: purchaseAmount * COMMISSION_CONFIG.level3,
       status: CommissionStatus.PENDING,
       level: 3,
       sourceUserId: buyerUserId,
       raffleId: raffleId,
-    });
+    };
+    commissions.push(commission);
+    console.log(`  ✓ Nivel 3 creado: $${commission.amount.toFixed(2)} para ${commission.userId}`);
   }
 
+  console.log(`📊 Total comisiones calculadas: ${commissions.length}`);
   return commissions;
 }
 

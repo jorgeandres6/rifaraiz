@@ -158,6 +158,7 @@ const App: React.FC = () => {
           email: u.email || '',
           role: (u.role || '').toLowerCase(),
           referralCode: u.referralCode || '',
+          referredBy: u.referredBy || undefined,
           upline: u.upline || [],
         }));
         setUsers(parsed);
@@ -554,12 +555,26 @@ const App: React.FC = () => {
 
         // Calculate and create commissions for upline
         const uplineIds = currentUser.upline || [];
+        console.log('🔍 DEBUG Comisiones:', {
+          buyerId: currentUser.id,
+          buyerName: currentUser.name,
+          upline: uplineIds,
+          uplineLength: uplineIds.length,
+          totalCost,
+        });
+        
         if (uplineIds.length > 0) {
           const newCommissions = calculateCommissions(totalCost, currentUser.id, uplineIds, raffleId);
+          console.log('💰 Comisiones calculadas:', newCommissions.map(c => ({
+            nivel: c.level,
+            usuario: c.userId,
+            monto: c.amount,
+          })));
           
           // Save each commission to Firestore
           for (const commission of newCommissions) {
             await Commissions.add(commission);
+            console.log(`✅ Comisión guardada: Nivel ${commission.level} - $${commission.amount.toFixed(2)} para ${commission.userId}`);
           }
           
           // Update local state
@@ -569,6 +584,8 @@ const App: React.FC = () => {
             date: new Date(),
           }));
           setCommissions(prev => [...prev, ...commissionsWithIds]);
+        } else {
+          console.log('⚠️ No se crean comisiones: upline vacío');
         }
       }
       

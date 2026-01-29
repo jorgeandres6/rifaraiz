@@ -193,6 +193,7 @@ export type UserDoc = {
   email: string;
   role?: string;
   referralCode?: string;
+  referredBy?: string;
   upline?: string[];
   phone?: string;
   city?: string;

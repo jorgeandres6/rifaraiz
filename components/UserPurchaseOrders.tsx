@@ -16,7 +16,16 @@ const UserPurchaseOrders: React.FC<UserPurchaseOrdersProps> = ({
   const [filterStatus, setFilterStatus] = useState<PurchaseOrderStatus | 'ALL'>('ALL');
 
   const userOrders = useMemo(
-    () => purchaseOrders.filter(order => order.userId === userId),
+    () => {
+      const filtered = purchaseOrders.filter(order => order.userId === userId);
+      console.log('🔍 UserPurchaseOrders - Conteo:', {
+        totalPurchaseOrders: purchaseOrders.length,
+        userId,
+        userOrdersCount: filtered.length,
+        userOrders: filtered,
+      });
+      return filtered;
+    },
     [purchaseOrders, userId]
   );
 
@@ -120,7 +129,7 @@ const UserPurchaseOrders: React.FC<UserPurchaseOrdersProps> = ({
     <div className="space-y-4">
       <div className="flex items-center gap-3 mb-6">
         <DocumentTextIcon className="w-6 h-6 text-purple-600" />
-        <h3 className="text-lg font-bold text-gray-900">
+        <h3 className="text-lg font-extrabold text-purple-600">
           Mis Órdenes de Compra ({filteredOrders.length} de {userOrders.length})
         </h3>
       </div>
