@@ -93,7 +93,10 @@ export type Raffle = {
 export const Raffles = {
   getAll: (constraints?: QueryConstraint[]) => getCollection<Raffle>("raffles", constraints as any),
   listen: (onChange: (items: Array<Raffle & { id: string }>) => void, constraints?: QueryConstraint[]) => listenCollection<Raffle>("raffles", onChange, constraints),
-  add: (data: Partial<Raffle>) => addDocument<Raffle>("raffles", { ...data, createdAt: serverTimestamp() } as Raffle),
+  add: (data: Partial<Raffle>) => {
+    const prepared = sanitizeForFirestore({ ...data, createdAt: serverTimestamp() });
+    return addDocument<Raffle>("raffles", prepared as Raffle);
+  },
   // Increment soldTickets and currentSales atomically
   incrementSales: async (raffleId: string, ticketsSold: number, revenue: number) => {
     const ref = doc(db, "raffles", raffleId);
@@ -201,9 +204,18 @@ export const Users = {
   getAll: (constraints?: QueryConstraint[]) => getCollection<UserDoc>("users", constraints as any),
   listen: (onChange: (items: Array<UserDoc & { id: string }>) => void, constraints?: QueryConstraint[]) => listenCollection<UserDoc>("users", onChange, constraints),
   get: (id: string) => getDocument<UserDoc>("users", id),
-  set: (id: string, data: Partial<UserDoc>) => setDocument<UserDoc>("users", id, data as UserDoc),
-  add: (data: Partial<UserDoc>) => addDocument<UserDoc>("users", data as UserDoc),
-  update: (id: string, partial: Partial<UserDoc>) => updateDocument("users", id, partial as any),
+  set: (id: string, data: Partial<UserDoc>) => {
+    const prepared = sanitizeForFirestore(data);
+    return setDocument<UserDoc>("users", id, prepared as UserDoc);
+  },
+  add: (data: Partial<UserDoc>) => {
+    const prepared = sanitizeForFirestore(data);
+    return addDocument<UserDoc>("users", prepared as UserDoc);
+  },
+  update: (id: string, partial: Partial<UserDoc>) => {
+    const prepared = sanitizeForFirestore(partial);
+    return updateDocument("users", id, prepared as any);
+  },
 };
 
 // --- UserPrizes helpers ---
@@ -268,12 +280,24 @@ export const PurchaseOrders = {
     const prepared = sanitizeForFirestore(partial);
     return updateDocument("purchaseOrders", id, prepared as any);
   },
-  markAsPaid: (id: string, adminId: string) => {
-    const prepared = sanitizeForFirestore({ status: 'PAID', paidAt: serverTimestamp(), paidByAdminId: adminId });
+  markAsPaid: (id: string, adminId: string, paymentMethod?: string, paymentNotes?: string) => {
+    const prepared = sanitizeForFirestore({ 
+      status: 'PAID', 
+      paidAt: serverTimestamp(), 
+      paidByAdminId: adminId,
+      paymentMethod: paymentMethod || undefined,
+      paymentNotes: paymentNotes || undefined
+    });
     return updateDocument("purchaseOrders", id, prepared as any);
   },
-  verify: (id: string, ticketIds: string[], adminId: string) => {
-    const prepared = sanitizeForFirestore({ status: 'VERIFIED', verifiedAt: serverTimestamp(), verifiedByAdminId: adminId, ticketIds });
+  verify: (id: string, ticketIds: string[], adminId: string, verificationNotes?: string) => {
+    const prepared = sanitizeForFirestore({ 
+      status: 'VERIFIED', 
+      verifiedAt: serverTimestamp(), 
+      verifiedByAdminId: adminId, 
+      ticketIds,
+      verificationNotes: verificationNotes || undefined
+    });
     return updateDocument("purchaseOrders", id, prepared as any);
   },
   reject: (id: string, rejectionReason: string, adminId: string) => {

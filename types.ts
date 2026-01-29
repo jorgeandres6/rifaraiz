@@ -142,8 +142,11 @@ export interface PurchaseOrder {
   createdAt: Date;
   paidAt?: Date;
   paidByAdminId?: string; // Admin who marked as paid
+  paymentMethod?: string; // Payment method (e.g., 'deposito', 'efectivo', 'transferencia')
+  paymentNotes?: string; // Notes about the payment (e.g., deposit number, who received cash)
   verifiedAt?: Date;
   verifiedByAdminId?: string; // Admin who verified the order
+  verificationNotes?: string; // Notes about the verification
   rejectionReason?: string;
   rejectedByAdminId?: string; // Admin who rejected the order
   ticketIds?: string[]; // IDs of tickets created when verified

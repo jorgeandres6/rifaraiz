@@ -31,6 +31,11 @@ const PurchaseOrdersModal: React.FC<PurchaseOrdersModalProps> = ({
   const [generatingTickets, setGeneratingTickets] = useState(false);
   const [ticketsGenerated, setTicketsGenerated] = useState<string[]>([]);
   const [searchCode, setSearchCode] = useState('');
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [paymentNotes, setPaymentNotes] = useState('');
+  const [showVerificationForm, setShowVerificationForm] = useState(false);
+  const [verificationNotes, setVerificationNotes] = useState('');
 
   const filteredOrders = useMemo(
     () => purchaseOrders.filter(order => {
@@ -93,7 +98,7 @@ const PurchaseOrdersModal: React.FC<PurchaseOrdersModalProps> = ({
       }
 
       // Update order in Firestore with verification
-      await PurchaseOrders.verify(order.id, ticketIds, currentUser.id);
+      await PurchaseOrders.verify(order.id, ticketIds, currentUser.id, verificationNotes);
 
       // Check if raffle has available prizes before granting roulette chances
       const hasPrizes = raffle.extraPrizes && raffle.extraPrizes.some(prize => prize.quantity > 0);
@@ -112,6 +117,8 @@ const PurchaseOrdersModal: React.FC<PurchaseOrdersModalProps> = ({
       // Refresh by deselecting
       setSelectedOrder(null);
       setTicketsGenerated([]);
+      setShowVerificationForm(false);
+      setVerificationNotes('');
     } catch (error) {
       console.error('Error verifying order:', error);
       alert('Error al verificar la orden: ' + (error instanceof Error ? error.message : String(error)));
@@ -143,14 +150,22 @@ const PurchaseOrdersModal: React.FC<PurchaseOrdersModalProps> = ({
   };
 
   const handleMarkAsPaid = async (order: PurchaseOrder) => {
+    if (!paymentMethod.trim()) {
+      alert('Por favor, selecciona un método de pago');
+      return;
+    }
+
     try {
-      await PurchaseOrders.markAsPaid(order.id, currentUser.id);
+      await PurchaseOrders.markAsPaid(order.id, currentUser.id, paymentMethod, paymentNotes);
 
       if (onMarkAsPaid) {
         onMarkAsPaid(order.id);
       }
 
       setSelectedOrder(null);
+      setShowPaymentForm(false);
+      setPaymentMethod('');
+      setPaymentNotes('');
     } catch (error) {
       console.error('Error marking order as paid:', error);
       alert('Error al marcar como pagado');
@@ -230,13 +245,13 @@ const PurchaseOrdersModal: React.FC<PurchaseOrdersModalProps> = ({
 
         {/* Search Bar */}
         {!selectedOrder && (
-          <div className="px-6 py-4 bg-gray-50 border-b">
+          <div className="px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 border-b-2 border-indigo-800">
             <input
               type="text"
               placeholder="Buscar por código de orden (ej: ORD-20260128-ABCD1234)..."
               value={searchCode}
               onChange={(e) => setSearchCode(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
+              className="w-full px-4 py-3 border-2 border-indigo-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white focus:border-white font-semibold"
             />
           </div>
         )}
@@ -317,6 +332,26 @@ const PurchaseOrdersModal: React.FC<PurchaseOrdersModalProps> = ({
                       )}
                     </div>
                   )}
+                  {selectedOrder.paymentMethod && (
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase font-semibold">Método de Pago</p>
+                      <p className="text-lg font-bold text-gray-900">
+                        {selectedOrder.paymentMethod === 'deposito' && 'Depósito Bancario'}
+                        {selectedOrder.paymentMethod === 'transferencia' && 'Transferencia'}
+                        {selectedOrder.paymentMethod === 'efectivo' && 'Efectivo'}
+                        {selectedOrder.paymentMethod === 'cheque' && 'Cheque'}
+                        {selectedOrder.paymentMethod === 'otro' && 'Otro'}
+                      </p>
+                    </div>
+                  )}
+                  {selectedOrder.paymentNotes && (
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase font-semibold">Observaciones de Pago</p>
+                      <p className="text-lg font-bold text-gray-900 break-words">
+                        {selectedOrder.paymentNotes}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {selectedOrder.ticketIds && selectedOrder.ticketIds.length > 0 && (
@@ -338,6 +373,15 @@ const PurchaseOrdersModal: React.FC<PurchaseOrdersModalProps> = ({
                           ))}
                         </div>
                       </div>
+                    </div>
+                    {selectedOrder.verificationNotes && (
+                      <div className="mt-4">
+                        <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Notas de Verificación</p>
+                        <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded border border-gray-200 break-words">
+                          {selectedOrder.verificationNotes}
+                        </p>
+                      </div>
+                    )}
                     </div>
                   </>
                 )}
@@ -381,49 +425,162 @@ const PurchaseOrdersModal: React.FC<PurchaseOrdersModalProps> = ({
               <div className="space-y-3">
                 {selectedOrder.status === 'PENDING' && (
                   <>
-                    <button
-                      onClick={() => handleMarkAsPaid(selectedOrder)}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition"
-                    >
-                      Marcar como Pagado
-                    </button>
-                    {!showRejectForm && (
-                      <button
-                        onClick={() => setShowRejectForm(true)}
-                        className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition"
-                      >
-                        Rechazar Orden
-                      </button>
+                    {!showPaymentForm ? (
+                      <>
+                        <button
+                          onClick={() => setShowPaymentForm(true)}
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition"
+                        >
+                          Marcar como Pagado
+                        </button>
+                        {!showRejectForm && (
+                          <button
+                            onClick={() => setShowRejectForm(true)}
+                            className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition"
+                          >
+                            Rechazar Orden
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 space-y-4">
+                        <h4 className="font-bold text-gray-900 mb-3">Registrar Pago</h4>
+                        
+                        {/* Payment Method */}
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Método de Pago *
+                          </label>
+                          <select
+                            value={paymentMethod}
+                            onChange={(e) => setPaymentMethod(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                          >
+                            <option value="">Selecciona un método...</option>
+                            <option value="deposito">Depósito Bancario</option>
+                            <option value="transferencia">Transferencia</option>
+                            <option value="efectivo">Efectivo</option>
+                            <option value="cheque">Cheque</option>
+                            <option value="otro">Otro</option>
+                          </select>
+                        </div>
+
+                        {/* Payment Notes */}
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Observaciones (Número de depósito, referencia, etc.)
+                          </label>
+                          <textarea
+                            value={paymentNotes}
+                            onChange={(e) => setPaymentNotes(e.target.value)}
+                            placeholder="Ej: Depósito #12345, Transferencia a Juan, Efectivo recibido por María..."
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 resize-none"
+                            rows={3}
+                          />
+                        </div>
+
+                        {/* Buttons */}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleMarkAsPaid(selectedOrder)}
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg transition"
+                          >
+                            Confirmar Pago
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowPaymentForm(false);
+                              setPaymentMethod('');
+                              setPaymentNotes('');
+                            }}
+                            className="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-semibold py-2 rounded-lg transition"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
                     )}
                   </>
                 )}
 
                 {selectedOrder.status === 'PAID' && (
                   <>
-                    <button
-                      onClick={() => handleVerifyOrder(selectedOrder)}
-                      disabled={generatingTickets}
-                      className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                      {generatingTickets ? (
-                        <>
-                          <span className="animate-spin">⟳</span>
-                          Generando boletos...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircleIcon className="w-5 h-5" />
-                          Verificar y Asignar Boletos
-                        </>
-                      )}
-                    </button>
-                    {!showRejectForm && (
-                      <button
-                        onClick={() => setShowRejectForm(true)}
-                        className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition"
-                      >
-                        Rechazar Orden
-                      </button>
+                    {!showVerificationForm ? (
+                      <>
+                        <button
+                          onClick={() => setShowVerificationForm(true)}
+                          disabled={generatingTickets}
+                          className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                          {generatingTickets ? (
+                            <>
+                              <span className="animate-spin">⟳</span>
+                              Generando boletos...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircleIcon className="w-5 h-5" />
+                              Verificar y Asignar Boletos
+                            </>
+                          )}
+                        </button>
+                        {!showRejectForm && (
+                          <button
+                            onClick={() => setShowRejectForm(true)}
+                            className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition"
+                          >
+                            Rechazar Orden
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 space-y-4">
+                        <h4 className="font-bold text-gray-900 mb-3">Verificación de Orden</h4>
+                        
+                        {/* Verification Notes */}
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Notas de Verificación (Opcional)
+                          </label>
+                          <textarea
+                            value={verificationNotes}
+                            onChange={(e) => setVerificationNotes(e.target.value)}
+                            placeholder="Ej: Boletos verificados, revisados y listos para entrega. Documentación completa..."
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 resize-none"
+                            rows={3}
+                          />
+                        </div>
+
+                        {/* Buttons */}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleVerifyOrder(selectedOrder)}
+                            disabled={generatingTickets}
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                          >
+                            {generatingTickets ? (
+                              <>
+                                <span className="animate-spin">⟳</span>
+                                Procesando...
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircleIcon className="w-4 h-4" />
+                                Confirmar Verificación
+                              </>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowVerificationForm(false);
+                              setVerificationNotes('');
+                            }}
+                            className="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-semibold py-2 rounded-lg transition"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
                     )}
                   </>
                 )}
