@@ -7,6 +7,7 @@ import Header from './components/Header';
 import NotificationsModal from './components/NotificationsModal';
 import SettingsModal from './components/SettingsModal';
 import Toasts, { Toast } from './components/Toasts';
+import PublicRaffles from './components/PublicRaffles';
 
 // Firestore helpers
 import { Raffles, Tickets, Commissions, Users, UserPrizes, PurchaseOrders, RouletteChances, setDocument, updateDocument, serverTimestamp } from './services/firestore';
@@ -27,6 +28,7 @@ const App: React.FC = () => {
   const [rouletteChances, setRouletteChances] = useState<RouletteChance[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
   
   // Initial Mock Notifications
   const [notifications, setNotifications] = useState<Notification[]>([
@@ -300,6 +302,7 @@ const App: React.FC = () => {
           upline: doc.upline || [],
         } as any);
         localStorage.setItem('loggedInUserId', doc.id || res.user.uid);
+        setShowAuth(false);
         return { success: true };
       } catch (err: any) {
         return { success: false, message: err?.message || 'Error al iniciar sesión con Firebase.' };
@@ -322,6 +325,7 @@ const App: React.FC = () => {
     if (pass === correctPassword) {
       setCurrentUser(user);
       localStorage.setItem('loggedInUserId', user.id);
+      setShowAuth(false);
       return { success: true };
     }
     
@@ -339,6 +343,7 @@ const App: React.FC = () => {
       }
     }
     setCurrentUser(null);
+    setShowAuth(false);
     localStorage.removeItem('loggedInUserId');
   };
 
@@ -365,6 +370,7 @@ const App: React.FC = () => {
         upline: doc.upline || [],
       } as any);
       localStorage.setItem('loggedInUserId', doc.id || res.user.uid);
+      setShowAuth(false);
       return { success: true };
     } catch (err: any) {
       return { success: false, message: err?.message || 'Error al iniciar con Google.' };
@@ -415,6 +421,7 @@ const App: React.FC = () => {
         // After sign up, onAuthState listener should pick it up; but set current user optimistically
         setCurrentUser({ id: res.user.uid, name: name, email, role: UserRole.USER, referralCode: '' } as any);
         localStorage.setItem('loggedInUserId', res.user.uid);
+        setShowAuth(false);
         return { success: true };
       } catch (err: any) {
         return { success: false, message: err?.message || 'Error al crear la cuenta con Firebase.' };
@@ -494,6 +501,7 @@ const App: React.FC = () => {
     setUsers(prev => [...prev, newUser]);
     setCurrentUser(newUser);
     localStorage.setItem('loggedInUserId', newUser.id);
+    setShowAuth(false);
     return { success: true };
   };
 
@@ -506,7 +514,10 @@ const App: React.FC = () => {
   };
   
   const handlePurchaseTicket = async (raffleId: string, amount: number, totalCost: number) => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      setShowAuth(true);
+      return;
+    }
     
     const raffle = raffles.find(r => r.id === raffleId);
     if (!raffle) {
@@ -901,8 +912,19 @@ const App: React.FC = () => {
     );
   }
 
-  if (!currentUser) {
+  if (!currentUser && showAuth) {
     return <AuthPage onLogin={handleLogin} onSignup={handleSignup} onGoogle={handleGoogleSignIn} onPasswordReset={handleSendPasswordReset} />;
+  }
+
+  if (!currentUser) {
+    return (
+      <PublicRaffles
+        raffles={raffles}
+        users={users}
+        onPurchase={handlePurchaseTicket}
+        onLogin={() => setShowAuth(true)}
+      />
+    );
   }
 
   const myNotifications = notifications.filter(n => n.userId === currentUser.id);
