@@ -106,14 +106,14 @@ const MyTickets: React.FC<MyTicketsProps> = ({ tickets, raffles, users, onTransf
 
 
   return (
-    <div className="bg-gray-800 rounded-lg shadow-lg p-6">
-      <div className="flex border-b border-gray-700 mb-6">
+    <div className="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
+      <div className="flex border-b border-gray-200 mb-6">
         <button
           onClick={() => setActiveTab('tickets')}
           className={`flex-1 py-3 px-4 font-semibold text-center border-b-2 transition ${
             activeTab === 'tickets'
-              ? 'border-indigo-400 text-indigo-400'
-              : 'border-transparent text-gray-400 hover:text-gray-300'
+              ? 'border-indigo-400 text-indigo-700'
+              : 'border-transparent text-gray-600 hover:text-gray-800'
           }`}
         >
           Mis Boletos ({tickets.length})
@@ -122,8 +122,8 @@ const MyTickets: React.FC<MyTicketsProps> = ({ tickets, raffles, users, onTransf
           onClick={() => setActiveTab('orders')}
           className={`flex-1 py-3 px-4 font-semibold text-center border-b-2 transition ${
             activeTab === 'orders'
-              ? 'border-indigo-400 text-indigo-400'
-              : 'border-transparent text-gray-400 hover:text-gray-300'
+              ? 'border-indigo-400 text-indigo-700'
+              : 'border-transparent text-gray-600 hover:text-gray-800'
           }`}
         >
           Órdenes de Compra ({purchaseOrders.length})
@@ -132,8 +132,8 @@ const MyTickets: React.FC<MyTicketsProps> = ({ tickets, raffles, users, onTransf
           onClick={() => setActiveTab('roulette')}
           className={`flex-1 py-3 px-4 font-semibold text-center border-b-2 transition ${
             activeTab === 'roulette'
-              ? 'border-indigo-400 text-indigo-400'
-              : 'border-transparent text-gray-400 hover:text-gray-300'
+              ? 'border-indigo-400 text-indigo-700'
+              : 'border-transparent text-gray-600 hover:text-gray-800'
           }`}
         >
           Oportunidades 🎰
@@ -142,15 +142,15 @@ const MyTickets: React.FC<MyTicketsProps> = ({ tickets, raffles, users, onTransf
 
       {activeTab === 'tickets' ? (
         <>
-          <h3 className="text-xl font-semibold text-indigo-400 mb-4">Mis Boletos</h3>
+          <h3 className="text-xl font-semibold text-indigo-700 mb-4">Mis Boletos</h3>
           {ticketsByRaffle.length === 0 ? (
-            <p className="text-gray-400 text-center py-4">Aún no has comprado ningún boleto.</p>
+            <p className="text-gray-600 text-center py-4">Aún no has comprado ningún boleto.</p>
           ) : (
             <div className="space-y-6">
               {ticketsByRaffle.map(({ raffle, displayItems, allTicketsForRaffle }) => (
-                <div key={raffle.id} className="bg-gray-700/50 p-4 rounded-md">
+                <div key={raffle.id} className="bg-gray-50 p-4 rounded-md border border-gray-200">
                   <div className="flex justify-between items-center mb-3">
-                    <h4 className="font-bold text-white">{raffle.title}</h4>
+                    <h4 className="font-bold text-gray-900">{raffle.title}</h4>
                     <button
                       onClick={() => openTransferModal(raffle)}
                       className="bg-indigo-600 text-white text-xs font-bold py-1 px-3 rounded-md hover:bg-indigo-700"
@@ -162,9 +162,9 @@ const MyTickets: React.FC<MyTicketsProps> = ({ tickets, raffles, users, onTransf
                     {displayItems.map(item => {
                       if (item.type === 'pack') {
                         return (
-                          <div key={item.id} className="bg-gray-800 flex justify-between items-center p-2 rounded-md">
-                            <span className="font-semibold text-sm text-indigo-300">{item.label}</span>
-                            <span className="font-mono text-xs text-gray-400">{item.numberRange}</span>
+                          <div key={item.id} className="bg-white flex justify-between items-center p-2 rounded-md border border-gray-200">
+                            <span className="font-semibold text-sm text-indigo-700">{item.label}</span>
+                            <span className="font-mono text-xs text-gray-600">{item.numberRange}</span>
                           </div>
                         );
                       } else { // type === 'single'
@@ -173,9 +173,9 @@ const MyTickets: React.FC<MyTicketsProps> = ({ tickets, raffles, users, onTransf
                           <button
                             key={item.id}
                             onClick={() => openDetailModal(ticket)}
-                            className="bg-gray-800 text-left w-full p-2 rounded-md hover:bg-gray-900 transition-colors"
+                            className="bg-white text-left w-full p-2 rounded-md border border-gray-200 hover:bg-gray-50 transition-colors"
                           >
-                            <span className="font-mono text-sm text-indigo-300">{item.label}</span>
+                            <span className="font-mono text-sm text-indigo-700">{item.label}</span>
                           </button>
                         );
                       }

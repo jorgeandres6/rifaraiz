@@ -12,8 +12,8 @@ interface PublicRafflesProps {
 
 const PublicRaffles: React.FC<PublicRafflesProps> = ({ raffles, users, onPurchase, onLogin }) => {
   return (
-    <div className="bg-gray-900 text-white min-h-screen">
-      <header className="bg-gray-900/80 backdrop-blur-sm sticky top-0 z-50 border-b border-gray-700">
+    <div className="bg-white text-gray-900 min-h-screen">
+      <header className="bg-white/90 backdrop-blur-sm sticky top-0 z-50 border-b border-gray-200">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center">
@@ -31,8 +31,8 @@ const PublicRaffles: React.FC<PublicRafflesProps> = ({ raffles, users, onPurchas
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Rifas Activas</h1>
-          <p className="text-sm text-gray-400 mt-2">Explora las rifas disponibles y participa cuando quieras.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Rifas Activas</h1>
+          <p className="text-sm text-gray-600 mt-2">Explora las rifas disponibles y participa cuando quieras.</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {raffles.map(raffle => {
