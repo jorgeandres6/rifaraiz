@@ -22,6 +22,15 @@ body {
   color: var(--rr-text);
 }
 
+/* Admin panel text color (keep button labels white) */
+.admin-panel {
+  color: var(--rr-text);
+}
+
+.admin-panel .text-white:not(button) {
+  color: var(--rr-text) !important;
+}
+
 /* Base surfaces */
 .bg-gray-900 { background-color: var(--rr-bg) !important; }
 .bg-gray-950 { background-color: #f8f9fc !important; }

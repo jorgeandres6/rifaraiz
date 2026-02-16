@@ -1742,7 +1742,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onAddRaffle, raffles, tickets, 
     }
 
     return (
-        <div className="bg-gray-800 rounded-lg shadow-lg p-6">
+      <div className="admin-panel bg-gray-800 rounded-lg shadow-lg p-6 text-blue-900">
             <div className="flex border-b-2 border-gray-700 mb-6 overflow-x-auto">
                 <button onClick={() => setActiveTab('stats')} className={getTabClass('stats')}>
                     Estadísticas
