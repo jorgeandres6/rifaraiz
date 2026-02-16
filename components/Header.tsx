@@ -45,7 +45,7 @@ const Header: React.FC<HeaderProps> = ({ currentUser, allUsers, switchUser, onLo
   };
 
   return (
-    <header className="bg-white/70 backdrop-blur-sm sticky top-0 z-50 border-b border-gray-200 text-blue-900">
+    <header className="bg-blue-900/70 backdrop-blur-sm sticky top-0 z-50 border-b border-blue-900/30 text-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
