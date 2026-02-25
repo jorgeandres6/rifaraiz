@@ -23,7 +23,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ title, subtitle, data, icon: 
                 <Icon className={`h-8 w-8 mr-3 ${colorClass}`} />
                 <div>
                     <h3 className="text-xl font-semibold text-white">{title}</h3>
-                    <p className="text-sm text-blue-200">{subtitle}</p>
+                    <p className="text-sm text-white">{subtitle}</p>
                 </div>
             </div>
             
