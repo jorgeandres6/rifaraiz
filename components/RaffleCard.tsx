@@ -207,10 +207,10 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle, onPurchase, hasActiveTi
           <select
             value={selectedPurchase}
             onChange={(e) => setSelectedPurchase(e.target.value)}
-            className="w-full bg-gray-900 border border-gray-600 rounded-md py-2 px-3 text-white focus:ring-indigo-500 focus:border-indigo-500"
+            className="w-full bg-gray-900 border border-gray-600 rounded-md py-2 px-3 text-blue-400 focus:ring-indigo-500 focus:border-indigo-500"
             aria-label="Seleccionar cantidad de boletos"
           >
-            <option value={`1_${raffle.ticketPrice}`}>
+            <option className="text-blue-600" value={`1_${raffle.ticketPrice}`}>
               1 Boleto por ${raffle.ticketPrice}
             </option>
             {raffle.ticketPacks?.map((pack, index) => {
@@ -220,7 +220,7 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle, onPurchase, hasActiveTi
                 : '';
               const fidelityText = pack.isFidelityPack ? ' - 🎟️ + Acceso Fidelity' : '';
               return (
-                <option key={index} value={`${pack.quantity}_${pack.price}`}>
+                <option className="text-blue-600" key={index} value={`${pack.quantity}_${pack.price}`}>
                   {pack.quantity} Boletos por ${pack.price.toFixed(2)} {savings > 0 ? `(Ahorra $${savings.toFixed(2)})` : ''}{bonusText}{fidelityText}
                 </option>
               );
