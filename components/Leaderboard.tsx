@@ -11,10 +11,10 @@ interface LeaderboardProps {
 
 const Leaderboard: React.FC<LeaderboardProps> = ({ title, subtitle, data, icon: Icon, colorClass }) => {
     
-    const rankColors = [
-        'text-yellow-400', // 1st
-        'text-gray-300',   // 2nd
-        'text-yellow-600'  // 3rd
+    const podiumBadgeClasses = [
+        'bg-yellow-300 text-yellow-900 ring-2 ring-yellow-100', // 1st
+        'bg-slate-200 text-slate-800 ring-2 ring-slate-50',     // 2nd
+        'bg-amber-600 text-amber-50 ring-2 ring-amber-300'      // 3rd
     ];
 
     return (
@@ -32,7 +32,9 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ title, subtitle, data, icon: 
                     <li key={user.id} className={`flex items-center p-3 rounded-md transition-all duration-300 ${user.isCurrentUser ? 'bg-indigo-600/30 ring-2 ring-indigo-500' : 'bg-blue-800/60'}`}>
                         <div className="flex items-center w-12">
                             {index < 3 ? (
-                                <TrophyIcon className={`h-6 w-6 ${rankColors[index]}`}/>
+                                <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${podiumBadgeClasses[index]}`}>
+                                    <TrophyIcon className="h-5 w-5"/>
+                                </span>
                             ) : (
                                 <span className="text-lg font-bold text-blue-200">{index + 1}</span>
                             )}
