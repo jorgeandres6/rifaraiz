@@ -36,7 +36,9 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ title, subtitle, data, icon: 
                                     <TrophyIcon className="h-5 w-5"/>
                                 </span>
                             ) : (
-                                <span className="text-lg font-bold text-blue-200">{index + 1}</span>
+                                <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-blue-950 text-sm font-extrabold text-blue-100 ring-1 ring-blue-400/70 px-2">
+                                    {index + 1}
+                                </span>
                             )}
                         </div>
                         <span className="flex-grow font-medium text-white">{user.name}</span>
