@@ -30,6 +30,11 @@ const MyTickets: React.FC<MyTicketsProps> = ({ tickets, raffles, users, onTransf
   const [selectedRaffle, setSelectedRaffle] = useState<Raffle | null>(null);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
 
+  const pendingPurchaseOrdersCount = useMemo(
+    () => purchaseOrders.filter(order => order.userId === userId && order.status === 'PENDING').length,
+    [purchaseOrders, userId]
+  );
+
   const ticketsByRaffle = useMemo(() => {
     const groupedByRaffle = tickets.reduce((acc, ticket) => {
         const raffle = raffles.find(r => r.id === ticket.raffleId);
@@ -126,7 +131,7 @@ const MyTickets: React.FC<MyTicketsProps> = ({ tickets, raffles, users, onTransf
               : 'border-transparent text-gray-600 hover:text-gray-800'
           }`}
         >
-          Órdenes de Compra ({purchaseOrders.length})
+          Órdenes de Compra ({pendingPurchaseOrdersCount})
         </button>
         <button
           onClick={() => setActiveTab('roulette')}
