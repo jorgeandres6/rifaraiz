@@ -54,6 +54,9 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle, onPurchase, hasActiveTi
       return (
         <>
         <div className="bg-gradient-to-br from-indigo-900 to-purple-900 rounded-lg shadow-xl overflow-hidden transform hover:scale-105 transition-transform duration-300 flex flex-col border border-purple-500/50 ring-1 ring-purple-500/30">
+            {raffle.imageUrl && (
+              <img src={raffle.imageUrl} alt={raffle.title} className="w-full h-40 object-cover" />
+            )}
             <div className="p-6 flex-grow relative">
                 <div className="absolute top-0 right-0 bg-purple-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg flex items-center shadow-lg">
                     <BuildingStoreIcon className="h-3 w-3 mr-1" />
@@ -110,6 +113,9 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle, onPurchase, hasActiveTi
   if (raffle.isMonthly) {
       return (
         <div className="bg-gradient-to-br from-yellow-900/40 to-gray-800 rounded-lg shadow-xl overflow-hidden transform hover:scale-105 transition-transform duration-300 flex flex-col border border-yellow-500/30 ring-1 ring-yellow-500/20">
+            {raffle.imageUrl && (
+              <img src={raffle.imageUrl} alt={raffle.title} className="w-full h-40 object-cover" />
+            )}
             <div className="p-6 flex-grow relative">
                 <div className="absolute top-0 right-0 bg-yellow-500 text-black text-xs font-bold px-3 py-1 rounded-bl-lg">
                     Rifa Mensual
@@ -153,6 +159,9 @@ const RaffleCard: React.FC<RaffleCardProps> = ({ raffle, onPurchase, hasActiveTi
 
   return (
     <div className="bg-gray-800 rounded-lg shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 flex flex-col">
+      {raffle.imageUrl && (
+        <img src={raffle.imageUrl} alt={raffle.title} className="w-full h-40 object-cover" />
+      )}
       <div className="p-6 flex-grow">
         <h3 className="text-xl font-bold text-indigo-400">{raffle.title}</h3>
         <div className="mt-2 h-16 overflow-y-auto custom-scrollbar">

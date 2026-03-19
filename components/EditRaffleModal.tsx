@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Raffle, TicketPack, ExtraPrize, User } from '../types';
 import { XIcon, TrashIcon, PlusCircleIcon, InformationCircleIcon, BuildingStoreIcon } from './icons';
+import { replaceRaffleImage } from '../services/storageService';
 
 interface EditRaffleModalProps {
   raffle: Raffle;
@@ -19,6 +20,9 @@ type PackState = {
 
 const EditRaffleModal: React.FC<EditRaffleModalProps> = ({ raffle, onClose, onUpdateRaffle, users }) => {
     const [activeTab, setActiveTab] = useState('general');
+    const [isUploading, setIsUploading] = useState(false);
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(raffle.imageUrl || null);
     const [formData, setFormData] = useState({
         title: raffle.title,
         description: raffle.description,
@@ -50,6 +54,37 @@ const EditRaffleModal: React.FC<EditRaffleModalProps> = ({ raffle, onClose, onUp
             ...prev,
             [name]: type === 'number' ? Number(value) : value,
         }));
+    };
+
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                alert('Por favor selecciona un archivo de imagen válido');
+                return;
+            }
+            
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('La imagen no debe exceder 5MB');
+                return;
+            }
+
+            setImageFile(file);
+            
+            // Create preview
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleRemoveImage = () => {
+        setImageFile(null);
+        setImagePreview(null);
     };
     
     const handlePackChange = (index: number, field: keyof PackState, value: string) => {
@@ -130,31 +165,49 @@ const EditRaffleModal: React.FC<EditRaffleModalProps> = ({ raffle, onClose, onUp
         setAssociatedBusinesses(prev => prev.filter((_, i) => i !== index));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const updatedTicketPacks: TicketPack[] = packs
-            .filter(p => p.quantity && p.price)
-            .map(p => ({
-                quantity: Number(p.quantity),
-                // Round to 2 decimals to avoid floating point issues
-                price: Math.round(Number(p.price) * 100) / 100,
-                ...(p.participationBonusPercent && { participationBonusPercent: Number(p.participationBonusPercent) }),
-                isFidelityPack: p.isFidelityPack
-            }));
+        
+        try {
+            setIsUploading(true);
+            
+            const updatedTicketPacks: TicketPack[] = packs
+                .filter(p => p.quantity && p.price)
+                .map(p => ({
+                    quantity: Number(p.quantity),
+                    // Round to 2 decimals to avoid floating point issues
+                    price: Math.round(Number(p.price) * 100) / 100,
+                    ...(p.participationBonusPercent && { participationBonusPercent: Number(p.participationBonusPercent) }),
+                    isFidelityPack: p.isFidelityPack
+                }));
 
-        const updatedRaffle: Raffle = {
-            ...raffle,
-            title: formData.title,
-            description: formData.description,
-            prizeInfo: formData.prizeInfo,
-            ticketPrice: formData.ticketPrice,
-            salesGoal: formData.salesGoal ? Number(formData.salesGoal) : undefined,
-            goalThresholdPercent: formData.goalThresholdPercent ? Number(formData.goalThresholdPercent) : undefined,
-            ticketPacks: updatedTicketPacks,
-            extraPrizes: extraPrizes,
-            associatedBusinesses: associatedBusinesses
-        };
-        onUpdateRaffle(updatedRaffle);
+            let imageUrl = raffle.imageUrl; // Keep existing image URL by default
+            
+            // Upload new image if one was selected
+            if (imageFile) {
+                imageUrl = await replaceRaffleImage(imageFile, raffle.id, raffle.imageUrl);
+            }
+
+            const updatedRaffle: Raffle = {
+                ...raffle,
+                title: formData.title,
+                description: formData.description,
+                prizeInfo: formData.prizeInfo,
+                ticketPrice: formData.ticketPrice,
+                imageUrl: imageUrl,
+                salesGoal: formData.salesGoal ? Number(formData.salesGoal) : undefined,
+                goalThresholdPercent: formData.goalThresholdPercent ? Number(formData.goalThresholdPercent) : undefined,
+                ticketPacks: updatedTicketPacks,
+                extraPrizes: extraPrizes,
+                associatedBusinesses: associatedBusinesses
+            };
+            onUpdateRaffle(updatedRaffle);
+        } catch (error) {
+            console.error('Error updating raffle:', error);
+            alert('Error al cargar la imagen. Por favor intenta de nuevo.');
+        } finally {
+            setIsUploading(false);
+        }
     };
 
     const getTabClass = (tabName: string) => {
@@ -198,6 +251,51 @@ const EditRaffleModal: React.FC<EditRaffleModalProps> = ({ raffle, onClose, onUp
                                 <div>
                                     <label htmlFor="description" className="block text-sm font-medium text-gray-300">Descripción</label>
                                     <textarea name="description" value={formData.description} onChange={handleFormChange} rows={3} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                                </div>
+
+                                <div className="border-t border-gray-600 pt-4">
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">Imagen de la Rifa</label>
+                                    {imagePreview ? (
+                                        <div className="relative inline-block">
+                                            <img src={imagePreview} alt="Preview" className="max-w-xs h-40 object-cover rounded-md border border-gray-600" />
+                                            <button 
+                                                type="button" 
+                                                onClick={handleRemoveImage}
+                                                className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full p-1"
+                                            >
+                                                <XIcon className="h-4 w-4" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="border-2 border-dashed border-gray-600 rounded-md p-6 text-center bg-gray-900/50 hover:border-indigo-500 transition-colors">
+                                            <p className="text-gray-400 mb-2">No hay imagen seleccionada</p>
+                                            <input 
+                                                type="file" 
+                                                id="image-upload"
+                                                accept="image/*" 
+                                                onChange={handleImageChange}
+                                                className="hidden"
+                                            />
+                                            <label htmlFor="image-upload" className="cursor-pointer text-indigo-400 hover:text-indigo-300 font-semibold">
+                                                Click para seleccionar imagen
+                                            </label>
+                                        </div>
+                                    )}
+                                    {imagePreview && (
+                                        <div className="mt-2">
+                                            <input 
+                                                type="file" 
+                                                id="image-upload"
+                                                accept="image/*" 
+                                                onChange={handleImageChange}
+                                                className="hidden"
+                                            />
+                                            <label htmlFor="image-upload" className="inline-block text-sm text-indigo-400 hover:text-indigo-300 font-semibold cursor-pointer">
+                                                Cambiar imagen
+                                            </label>
+                                        </div>
+                                    )}
+                                    <p className="text-xs text-gray-500 mt-2">Formato: JPG, PNG, GIF. Tamaño máximo: 5MB</p>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div>
@@ -363,8 +461,11 @@ const EditRaffleModal: React.FC<EditRaffleModalProps> = ({ raffle, onClose, onUp
                     </div>
                     
                     <div className="p-4 bg-gray-800 border-t border-gray-700 mt-auto flex justify-end space-x-3">
-                        <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600">Cancelar</button>
-                        <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">Guardar Cambios</button>
+                        <button type="button" onClick={onClose} disabled={isUploading} className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed">Cancelar</button>
+                        <button type="submit" disabled={isUploading} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center">
+                            {isUploading && <span className="inline-block animate-spin mr-2">⏳</span>}
+                            {isUploading ? 'Guardando...' : 'Guardar Cambios'}
+                        </button>
                     </div>
                 </form>
             </div>

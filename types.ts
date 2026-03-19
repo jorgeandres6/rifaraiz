@@ -62,6 +62,7 @@ export interface Raffle {
   title: string;
   description: string;
   prizeInfo: string;
+  imageUrl?: string; // URL of the raffle image stored in Firestore
   salesGoal?: number; // Total revenue goal in dollars (optional)
   goalThresholdPercent?: number; // Percentage of goal to display publicly (optional)
   ticketPrice: number;
