@@ -20,8 +20,8 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({ isOpen, onClose, 
 
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-lg relative transform transition-all p-6 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 modal-overlay bg-black/60 backdrop-blur-sm z-50">
+      <div className="modal-panel-scroll bg-gray-800 rounded-lg shadow-xl w-full max-w-lg relative transform transition-all p-6 max-h-[90vh] overflow-y-auto">
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white z-10">
           <XIcon className="h-6 w-6" />
         </button>

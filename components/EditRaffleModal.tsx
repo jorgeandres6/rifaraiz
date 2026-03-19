@@ -219,8 +219,8 @@ const EditRaffleModal: React.FC<EditRaffleModalProps> = ({ raffle, onClose, onUp
     };
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-gray-900 rounded-lg shadow-xl w-full max-w-3xl relative transform transition-all max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 modal-overlay bg-black/60 backdrop-blur-sm z-50">
+            <div className="modal-panel-scroll bg-gray-900 rounded-lg shadow-xl w-full max-w-3xl relative transform transition-all max-h-[90vh] flex flex-col">
                 <form onSubmit={handleSubmit} className="flex flex-col h-full bg-gray-800 rounded-lg">
                     <div className="p-6 pb-0 border-b border-gray-700">
                         <button type="button" onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white">

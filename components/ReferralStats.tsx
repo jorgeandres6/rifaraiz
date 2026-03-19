@@ -63,30 +63,30 @@ const ReferralStats: React.FC<ReferralStatsProps> = ({ currentUser, users, ticke
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                     <div className="bg-gray-700/50 p-4 rounded-lg">
                         <UsersIcon className="h-8 w-8 mx-auto text-indigo-400 mb-2"/>
-                        <p className="text-sm text-gray-400">Referidos Directos</p>
-                        <p className="text-2xl font-bold text-white">{networkStats.directReferrals.length}</p>
+                        <p className="text-sm font-medium text-gray-700">Referidos Directos</p>
+                        <p className="text-2xl font-bold text-gray-900">{networkStats.directReferrals.length}</p>
                     </div>
                     <div className="bg-gray-700/50 p-4 rounded-lg">
                         <ShareIcon className="h-8 w-8 mx-auto text-purple-400 mb-2"/>
-                        <p className="text-sm text-gray-400">Tamaño Total de Red</p>
-                        <p className="text-2xl font-bold text-white">{networkStats.totalNetworkSize}</p>
+                        <p className="text-sm font-medium text-gray-700">Tamaño Total de Red</p>
+                        <p className="text-2xl font-bold text-gray-900">{networkStats.totalNetworkSize}</p>
                     </div>
                     <div className="bg-gray-700/50 p-4 rounded-lg">
                         <CurrencyDollarIcon className="h-8 w-8 mx-auto text-green-400 mb-2"/>
-                        <p className="text-sm text-gray-400">Ventas de tu Red</p>
-                        <p className="text-2xl font-bold text-white">${networkStats.totalNetworkSales.toLocaleString()}</p>
+                        <p className="text-sm font-medium text-gray-700">Ventas de tu Red</p>
+                        <p className="text-2xl font-bold text-gray-900">${networkStats.totalNetworkSales.toLocaleString()}</p>
                     </div>
                 </div>
             </div>
 
             <div>
-                <h4 className="font-semibold text-white mb-2">Mis Referidos Directos</h4>
+                <h4 className="font-semibold text-gray-900 mb-2">Mis Referidos Directos</h4>
                 {networkStats.directReferrals.length === 0 ? (
-                    <p className="text-gray-400 text-center py-4 bg-gray-900/50 rounded-md">Aún no tienes referidos directos.</p>
+                    <p className="text-gray-700 text-center py-4 bg-gray-900/50 rounded-md">Aún no tienes referidos directos.</p>
                 ) : (
                     <div className="overflow-x-auto max-h-60 bg-gray-900/50 rounded-md border border-gray-700">
-                       <table className="w-full text-sm text-left text-gray-300">
-                            <thead className="text-xs text-gray-400 uppercase bg-gray-700/50 sticky top-0">
+                       <table className="w-full text-sm text-left text-gray-700">
+                            <thead className="text-xs text-gray-700 uppercase bg-gray-700/50 sticky top-0">
                                 <tr>
                                     <th scope="col" className="px-4 py-3">Nombre</th>
                                     <th scope="col" className="px-4 py-3">Correo Electrónico</th>
@@ -96,9 +96,9 @@ const ReferralStats: React.FC<ReferralStatsProps> = ({ currentUser, users, ticke
                             <tbody>
                                 {networkStats.directReferrals.map(user => (
                                     <tr key={user.id} className="border-b border-gray-700 hover:bg-gray-700/30">
-                                        <td className="px-4 py-2 font-medium text-white">{user.name || user.email || '-'}</td>
+                                        <td className="px-4 py-2 font-medium text-gray-900">{user.name || user.email || '-'}</td>
                                         <td className="px-4 py-2">{user.email || '-'}</td>
-                                        <td className="px-4 py-2 font-mono">{user.referralCode || '-'}</td>
+                                        <td className="px-4 py-2 font-mono text-gray-900">{user.referralCode || '-'}</td>
                                     </tr>
                                 ))}
                             </tbody>

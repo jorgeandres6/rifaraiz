@@ -22,6 +22,31 @@ body {
   color: var(--rr-text);
 }
 
+.modal-overlay {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 1rem;
+}
+
+.modal-panel-scroll {
+  max-height: min(90vh, calc(100dvh - 2rem));
+  margin-block: auto;
+}
+
+@media (min-width: 640px) {
+  .modal-overlay {
+    align-items: center;
+    padding: 1.5rem;
+  }
+
+  .modal-panel-scroll {
+    max-height: min(90vh, calc(100dvh - 3rem));
+  }
+}
+
 /* Admin panel text color (keep button labels white) */
 .admin-panel {
   color: var(--rr-text);

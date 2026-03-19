@@ -887,8 +887,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
   
         {/* Edit User Modal */}
         {isModalOpen && editingUser && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-md relative animate-fade-in">
+          <div className="fixed inset-0 modal-overlay bg-black/60 backdrop-blur-sm z-50">
+            <div className="modal-panel-scroll bg-gray-800 rounded-lg shadow-xl w-full max-w-md relative animate-fade-in max-h-[90vh] overflow-y-auto">
               <button onClick={handleCloseModal} className="absolute top-3 right-3 text-gray-400 hover:text-white">
                 <XIcon className="h-6 w-6" />
               </button>
@@ -923,8 +923,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
 
         {/* Profile Modal */}
         {isProfileOpen && profileUser && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl relative animate-fade-in flex flex-col max-h-[90vh]">
+          <div className="fixed inset-0 modal-overlay bg-black/60 backdrop-blur-sm z-50">
+            <div className="modal-panel-scroll bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl relative animate-fade-in flex flex-col max-h-[90vh]">
               <button onClick={handleCloseProfile} className="absolute top-3 right-3 text-gray-400 hover:text-white z-10">
                 <XIcon className="h-6 w-6" />
               </button>
@@ -1019,8 +1019,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUser, on
 
         {/* Send Message Modal */}
         {isMessageModalOpen && (messageRecipient || isBroadcast) && (
-             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-lg relative animate-fade-in">
+             <div className="fixed inset-0 modal-overlay bg-black/60 backdrop-blur-sm z-50">
+               <div className="modal-panel-scroll bg-gray-800 rounded-lg shadow-xl w-full max-w-lg relative animate-fade-in max-h-[90vh] overflow-y-auto">
                     <button onClick={handleCloseMessageModal} className="absolute top-3 right-3 text-gray-400 hover:text-white">
                         <XIcon className="h-6 w-6" />
                     </button>
@@ -1331,8 +1331,8 @@ const ReferralNetworkStats: React.FC<{ users: User[], tickets: Ticket[], raffles
 
         {/* Commission History Modal */}
         {selectedUser && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-            <div className="bg-gray-800 rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="fixed inset-0 modal-overlay bg-black/70 z-50">
+            <div className="modal-panel-scroll bg-gray-800 rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
               {/* Header */}
               <div className="p-6 border-b border-gray-700 flex justify-between items-center">
                 <div>
@@ -1525,8 +1525,8 @@ const ReferralNetworkStats: React.FC<{ users: User[], tickets: Ticket[], raffles
 
         {/* Revert to Pending Modal */}
         {revertModalCommission && (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4">
-            <div className="bg-gray-900 rounded-xl shadow-2xl max-w-md w-full border-2 border-orange-500">
+          <div className="fixed inset-0 modal-overlay bg-black/80 z-[60]">
+            <div className="modal-panel-scroll bg-gray-900 rounded-xl shadow-2xl max-w-md w-full border-2 border-orange-500 max-h-[90vh] overflow-y-auto">
               {/* Header */}
               <div className="p-6 border-b-2 border-orange-500 bg-gradient-to-r from-orange-900/50 to-amber-800/50">
                 <h3 className="text-2xl font-bold text-white mb-1">Revertir a Pendiente</h3>
@@ -1609,8 +1609,8 @@ const ReferralNetworkStats: React.FC<{ users: User[], tickets: Ticket[], raffles
 
         {/* Payment Confirmation Modal */}
         {paymentModalCommission && (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4">
-            <div className="bg-gray-900 rounded-xl shadow-2xl max-w-md w-full border-2 border-emerald-500 flex flex-col max-h-[90vh]">
+          <div className="fixed inset-0 modal-overlay bg-black/80 z-[60]">
+            <div className="modal-panel-scroll bg-gray-900 rounded-xl shadow-2xl max-w-md w-full border-2 border-emerald-500 flex flex-col max-h-[90vh]">
               {/* Header */}
               <div className="p-6 border-b-2 border-emerald-500 bg-gradient-to-r from-emerald-900/50 to-emerald-800/50">
                 <h3 className="text-2xl font-bold text-white mb-1">Confirmar Pago</h3>

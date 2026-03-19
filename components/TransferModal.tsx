@@ -61,8 +61,8 @@ const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, raffleTi
 
   if (successData) {
       return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-            <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-sm p-6 text-center animate-fade-in border border-gray-700 transform transition-all scale-100">
+        <div className="fixed inset-0 modal-overlay bg-black/60 backdrop-blur-sm z-[60]">
+          <div className="modal-panel-scroll bg-gray-800 rounded-lg shadow-xl w-full max-w-sm p-6 text-center animate-fade-in border border-gray-700 transform transition-all scale-100">
                 <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-500/20 mb-5">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8 text-green-500">
                         <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
@@ -88,8 +88,8 @@ const TransferModal: React.FC<TransferModalProps> = ({ isOpen, onClose, raffleTi
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-      <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-lg relative transform transition-all max-h-[90vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 modal-overlay bg-black/60 backdrop-blur-sm z-[60]">
+      <div className="modal-panel-scroll bg-gray-800 rounded-lg shadow-xl w-full max-w-lg relative transform transition-all max-h-[90vh] flex flex-col overflow-hidden">
         <button onClick={onClose} className="absolute top-3 right-3 text-gray-400 hover:text-white">
           <XIcon className="h-6 w-6" />
         </button>

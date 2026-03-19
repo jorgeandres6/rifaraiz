@@ -92,8 +92,8 @@ const AdminPrizeRedemptionModal: React.FC<AdminPrizeRedemptionModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-gray-900 rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto border border-gray-700 p-6">
+    <div className="fixed inset-0 modal-overlay bg-black/50 z-50">
+      <div className="modal-panel-scroll bg-gray-900 rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto border border-gray-700 p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-white">Canjear Premio</h2>

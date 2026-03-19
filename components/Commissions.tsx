@@ -155,12 +155,12 @@ const Commissions: React.FC<CommissionsProps> = ({ commissions, users, currentUs
         
         {/* Referral Commissions Section */}
         <div>
-          <h4 className="font-semibold text-white mb-2">Comisiones por Referidos</h4>
+          <h4 className="font-semibold text-gray-900 mb-2">Comisiones por Referidos</h4>
 
           {/* Share / referral code area */}
           <div className="flex items-center justify-between bg-gray-700/50 p-3 rounded-md mb-4">
             <div>
-              <p className="text-sm text-gray-400">Tu código de referido</p>
+              <p className="text-sm font-medium text-gray-700">Tu código de referido</p>
               <p className="text-lg font-bold text-indigo-400">{currentUser.referralCode}</p>
             </div>
             <div className="flex items-center gap-2">
@@ -183,12 +183,12 @@ const Commissions: React.FC<CommissionsProps> = ({ commissions, users, currentUs
 
           <div className="grid grid-cols-2 gap-4 text-center">
               <div className="bg-gray-700/50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-400">Pendiente</p>
-                  <p className="text-2xl font-bold text-yellow-400">${totalPending.toFixed(2)}</p>
+                  <p className="text-sm font-medium text-gray-700">Pendiente</p>
+                  <p className="text-2xl font-bold text-gray-900">${totalPending.toFixed(2)}</p>
               </div>
               <div className="bg-gray-700/50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-400">Pagado</p>
-                  <p className="text-2xl font-bold text-green-400">${totalPaid.toFixed(2)}</p>
+                  <p className="text-sm font-medium text-gray-700">Pagado</p>
+                  <p className="text-2xl font-bold text-gray-900">${totalPaid.toFixed(2)}</p>
               </div>
           </div>
           {myCommissions.length > 0 && (
@@ -200,14 +200,14 @@ const Commissions: React.FC<CommissionsProps> = ({ commissions, users, currentUs
                           <div className="flex items-center">
                               <GiftIcon className="h-5 w-5 mr-3 text-indigo-400"/>
                               <div>
-                                  <p className="font-semibold text-white">${commission.amount.toFixed(2)}</p>
-                                  <p className="text-xs text-gray-400">
+                                  <p className="font-semibold text-gray-900">${commission.amount.toFixed(2)}</p>
+                                  <p className="text-xs text-gray-700">
                                       Nivel {commission.level} - de {sourceUser ? `${sourceUser.name} (${sourceUser.referralCode})` : 'Usuario desconocido'}
                                   </p>
                               </div>
                           </div>
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                          commission.status === CommissionStatus.PENDING ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'
+                      <span className={`px-2 py-1 text-xs rounded-full font-semibold ${
+                          commission.status === CommissionStatus.PENDING ? 'bg-yellow-500/20 text-gray-900' : 'bg-green-500/20 text-gray-900'
                       }`}>
                           {commission.status}
                       </span>
@@ -219,7 +219,7 @@ const Commissions: React.FC<CommissionsProps> = ({ commissions, users, currentUs
         </div>
         <div className="border-t border-gray-700 pt-6">
           <div className="flex items-center mb-2 gap-2">
-            <h4 className="font-semibold text-white">Recompensas por Packs de Boletos</h4>
+            <h4 className="font-semibold text-gray-900">Recompensas por Packs de Boletos</h4>
             <div 
                 className="relative flex items-center"
                 onMouseEnter={() => setShowTooltip(true)}
@@ -236,11 +236,11 @@ const Commissions: React.FC<CommissionsProps> = ({ commissions, users, currentUs
             </div>
           </div>
           <div className="bg-gray-700/50 p-4 rounded-lg text-center">
-            <p className="text-sm text-gray-400">Ganancias Totales por Participación</p>
-            <p className="text-2xl font-bold text-green-400">${packRewards.total.toFixed(2)}</p>
+            <p className="text-sm font-medium text-gray-700">Ganancias Totales por Participación</p>
+            <p className="text-2xl font-bold text-gray-900">${packRewards.total.toFixed(2)}</p>
           </div>
           {packRewards.breakdown.length === 0 ? (
-            <p className="text-gray-400 text-center py-4 mt-4 bg-gray-900/50 rounded-md">No has ganado recompensas por packs aún.</p>
+            <p className="text-gray-700 text-center py-4 mt-4 bg-gray-900/50 rounded-md">No has ganado recompensas por packs aún.</p>
           ) : (
             <ul className="space-y-3 max-h-60 overflow-y-auto pr-2 mt-4">
               {packRewards.breakdown.map((reward, index) => (
@@ -249,18 +249,18 @@ const Commissions: React.FC<CommissionsProps> = ({ commissions, users, currentUs
                   <div className="flex items-center justify-between font-semibold">
                     <div className="flex items-center">
                       <TrophyIcon className="h-5 w-5 mr-3 text-yellow-400 flex-shrink-0" />
-                      <p className="text-white">
+                      <p className="text-gray-900">
                         Ganancia en "{reward.raffleTitle}"
                       </p>
                     </div>
-                    <p className="text-lg text-green-400">${reward.amount.toFixed(2)}</p>
+                    <p className="text-lg font-bold text-gray-900">${reward.amount.toFixed(2)}</p>
                   </div>
 
                   {/* Breakdown per pack */}
                   {reward.details.length > 0 && (
                     <div className="pl-8 space-y-1 border-l-2 border-gray-600 ml-2.5 pt-1">
                       {reward.details.map((detail, detailIndex) => (
-                        <p key={detailIndex} className="text-xs text-gray-300">
+                        <p key={detailIndex} className="text-xs text-gray-700">
                           {detail}
                         </p>
                       ))}

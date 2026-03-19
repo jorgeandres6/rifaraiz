@@ -170,8 +170,8 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, raffles, tic
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-3xl relative transform transition-all max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 modal-overlay bg-black/60 backdrop-blur-sm z-50">
+            <div className="modal-panel-scroll bg-gray-800 rounded-lg shadow-xl w-full max-w-3xl relative transform transition-all max-h-[90vh] flex flex-col">
         <div className="p-6 border-b border-gray-700">
           <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white">
             <XIcon className="h-6 w-6" />

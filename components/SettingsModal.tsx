@@ -161,9 +161,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, currentU
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[70] p-4 animate-fade-in" onClick={onClose}>
+        <div className="fixed inset-0 modal-overlay bg-black/70 backdrop-blur-sm z-[70] animate-fade-in" onClick={onClose}>
       <div 
-        className="bg-gray-800 rounded-lg shadow-2xl w-full max-w-md relative transform transition-all border border-gray-600 flex flex-col max-h-[90vh]" 
+                className="modal-panel-scroll bg-gray-800 rounded-lg shadow-2xl w-full max-w-md relative transform transition-all border border-gray-600 flex flex-col max-h-[90vh]" 
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6 border-b border-gray-700 flex justify-between items-center">

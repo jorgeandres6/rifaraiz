@@ -235,8 +235,8 @@ const PurchaseOrdersModal: React.FC<PurchaseOrdersModalProps> = ({
   const tabs = ['PENDING', 'PAID', 'VERIFIED', 'REJECTED', 'CANCELLED'] as const;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 modal-overlay bg-black bg-opacity-50 z-50">
+      <div className="modal-panel-scroll bg-white rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-blue-600 text-white p-6 flex justify-between items-center">
           <div className="flex items-center gap-3">

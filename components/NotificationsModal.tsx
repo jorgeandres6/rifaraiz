@@ -21,8 +21,8 @@ const NotificationsModal: React.FC<NotificationsModalProps> = ({ isOpen, onClose
   return (
     <>
       {/* Increased z-index from 40 to 60 to appear above sticky header (z-50) */}
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={onClose}>
-        <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-sm relative transform transition-all animate-fade-in border border-gray-700" onClick={(e) => e.stopPropagation()}>
+            <div className="fixed inset-0 modal-overlay bg-black/60 backdrop-blur-sm z-[60]" onClick={onClose}>
+                <div className="modal-panel-scroll bg-gray-800 rounded-lg shadow-xl w-full max-w-sm relative transform transition-all animate-fade-in border border-gray-700 max-h-[90vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
           <div className="p-4 border-b border-gray-700 flex justify-between items-center">
               <div className="flex items-center">
                   <BellIcon className="h-5 w-5 text-indigo-400 mr-2" />
@@ -32,7 +32,7 @@ const NotificationsModal: React.FC<NotificationsModalProps> = ({ isOpen, onClose
                   <XIcon className="h-5 w-5" />
               </button>
           </div>
-          <div className="max-h-96 overflow-y-auto">
+          <div className="max-h-96 overflow-y-auto flex-1">
               {notifications.length > 0 ? (
                   <ul className="divide-y divide-gray-700">
                       {notifications.sort((a,b) => b.date.getTime() - a.date.getTime()).map(notif => (
@@ -74,9 +74,9 @@ const NotificationsModal: React.FC<NotificationsModalProps> = ({ isOpen, onClose
       {/* Modal de Detalle de Notificación */}
       {selectedNotification && (
         // Increased z-index to 70 to appear above the list modal
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[70] p-4" onClick={() => setSelectedNotification(null)}>
+        <div className="fixed inset-0 modal-overlay bg-black/70 backdrop-blur-md z-[70]" onClick={() => setSelectedNotification(null)}>
             <div 
-                className="bg-gray-800 rounded-lg shadow-2xl w-full max-w-md relative transform transition-all p-6 border border-gray-600 animate-fade-in" 
+                className="modal-panel-scroll bg-gray-800 rounded-lg shadow-2xl w-full max-w-md relative transform transition-all p-6 border border-gray-600 animate-fade-in max-h-[90vh] overflow-y-auto" 
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex justify-between items-start mb-5">
