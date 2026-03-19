@@ -38,7 +38,8 @@ export async function addDocument<T = any>(collectionName: string, data: T) {
 }
 
 export async function setDocument<T = any>(collectionName: string, id: string, data: T) {
-  return setDoc(doc(db, collectionName, id), data as any);
+  const prepared = sanitizeForFirestore(data);
+  return setDoc(doc(db, collectionName, id), prepared as any);
 }
 
 export async function updateDocument(collectionName: string, id: string, partial: Partial<any>) {
