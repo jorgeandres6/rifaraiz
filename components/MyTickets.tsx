@@ -199,11 +199,11 @@ const MyTickets: React.FC<MyTicketsProps> = ({ tickets, raffles, users, onTransf
         />
       ) : (
         <>
-          <h3 className="text-xl font-semibold text-indigo-400 mb-4">Oportunidades de Ruleta 🎰</h3>
+          <h3 className="text-xl font-semibold text-indigo-700 mb-4">Oportunidades de Ruleta 🎰</h3>
           {rouletteChances.filter(rc => rc.userId === userId && rc.chances > 0).length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-400 mb-2">No tienes oportunidades disponibles.</p>
-              <p className="text-gray-500 text-sm">Compra boletos y espera a que tu orden sea verificada para acumular oportunidades.</p>
+              <p className="text-gray-700 mb-2">No tienes oportunidades disponibles.</p>
+              <p className="text-gray-600 text-sm">Compra boletos y espera a que tu orden sea verificada para acumular oportunidades.</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -216,9 +216,9 @@ const MyTickets: React.FC<MyTicketsProps> = ({ tickets, raffles, users, onTransf
                     <div key={rc.id} className="bg-gray-700/50 p-4 rounded-md">
                       <div className="flex justify-between items-center">
                         <div>
-                          <h4 className="font-bold text-white">{raffle.title}</h4>
-                          <p className="text-sm text-gray-400 mt-1">
-                            Tienes <span className="text-indigo-400 font-bold">{rc.chances}</span> {rc.chances === 1 ? 'oportunidad' : 'oportunidades'} disponibles
+                          <h4 className="font-bold text-gray-900">{raffle.title}</h4>
+                          <p className="text-sm text-gray-700 mt-1">
+                            Tienes <span className="text-indigo-700 font-bold">{rc.chances}</span> {rc.chances === 1 ? 'oportunidad' : 'oportunidades'} disponibles
                           </p>
                         </div>
                         <button
