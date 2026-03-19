@@ -723,8 +723,8 @@ const App: React.FC = () => {
 
     // Persist raffle to Firestore (best-effort)
     try {
-      // Use Raffles.add which handles sanitization
-      await Raffles.add(newRaffle);
+      const { id, ...raffleData } = newRaffle as any;
+      await setDocument('raffles', id, raffleData);
     } catch (err) {
       console.error('Error creating raffle in Firestore:', err);
       showToast('Error creating raffle in Firestore. Revisa la consola para más detalles.', 'error');
@@ -747,6 +747,19 @@ const App: React.FC = () => {
         await updateDocument('raffles', updatedRaffle.id, raffleData);
         console.log('Raffle updated in Firestore:', updatedRaffle.id);
       } catch (err) {
+        const firestoreError = err as { code?: string };
+
+        if (firestoreError.code === 'not-found') {
+          try {
+            const { id, ...raffleData } = updatedRaffle as any;
+            await setDocument('raffles', updatedRaffle.id, raffleData);
+            console.log('Raffle created in Firestore after missing document fallback:', updatedRaffle.id);
+            return;
+          } catch (fallbackErr) {
+            console.error('Error creating missing raffle in Firestore:', fallbackErr);
+          }
+        }
+
         console.error('Error updating raffle in Firestore:', err);
         showToast('Error actualizando rifa en Firestore', 'error');
       }
