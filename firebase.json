@@ -1,0 +1,8 @@
+{
+  "storage": [
+    {
+      "bucket": "rifa-raiz.firebasestorage.app",
+      "rules": "storage.rules"
+    }
+  ]
+}

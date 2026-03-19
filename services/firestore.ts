@@ -20,6 +20,7 @@ import {
   writeBatch,
   increment,
   serverTimestamp,
+  deleteField,
 } from "firebase/firestore";
 import { db } from "./firebase";
 
@@ -41,7 +42,8 @@ export async function setDocument<T = any>(collectionName: string, id: string, d
 }
 
 export async function updateDocument(collectionName: string, id: string, partial: Partial<any>) {
-  return updateDoc(doc(db, collectionName, id), partial as any);
+  const prepared = sanitizeForFirestoreUpdate(partial);
+  return updateDoc(doc(db, collectionName, id), prepared as any);
 }
 
 export async function getDocument<T = any>(collectionName: string, id: string) {
@@ -136,6 +138,31 @@ function sanitizeForFirestore(obj: any): any {
       }
     }
   });
+  return out;
+}
+
+function sanitizeForFirestoreUpdate(obj: any): any {
+  if (!obj || typeof obj !== 'object') return obj;
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeForFirestore(item));
+  }
+
+  const out: any = {};
+  Object.entries(obj).forEach(([k, v]) => {
+    if (v === undefined) {
+      out[k] = deleteField();
+      return;
+    }
+
+    if (v && typeof v === 'object' && !v.seconds && !v.nanoseconds) {
+      out[k] = sanitizeForFirestore(v);
+      return;
+    }
+
+    out[k] = v;
+  });
+
   return out;
 }
 
