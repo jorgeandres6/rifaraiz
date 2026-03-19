@@ -164,7 +164,7 @@ const Commissions: React.FC<CommissionsProps> = ({ commissions, users, currentUs
               <p className="text-lg font-bold text-indigo-400">{currentUser.referralCode}</p>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={copyReferralLink} className="bg-gray-600 hover:bg-gray-500 p-2 rounded-md text-sm text-white" title="Copiar enlace">
+              <button onClick={copyReferralLink} className="bg-gray-600 hover:bg-gray-500 p-2 rounded-md text-sm text-gray-900" title="Copiar enlace">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M8 7a1 1 0 011-1h5a1 1 0 011 1v7a1 1 0 11-2 0V8H9a1 1 0 01-1-1z"/><path d="M3 5a2 2 0 012-2h6a2 2 0 012 2v1a1 1 0 11-2 0V5H5v9h4a1 1 0 110 2H5a2 2 0 01-2-2V5z"/></svg>
               </button>
               <button onClick={shareViaWhatsApp} className="bg-green-600 hover:bg-green-500 p-2 rounded-md text-sm text-white" title="Compartir por WhatsApp">
